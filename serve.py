@@ -1,5 +1,6 @@
 """Local Honor of Kings sampling service. Python 3.10+, standard library only."""
 import json
+import social
 import os
 import re
 import sqlite3
@@ -140,6 +141,10 @@ def official_announcements():
     return sorted(links.items.values(), key=lambda item: item["version_date"], reverse=True)[:12]
 
 def article_url(item_id):
+    if item_id.startswith("dy-"):
+        return "https://www.douyin.com/video/" + item_id[3:]
+    if item_id.startswith("xhs-"):
+        return "https://www.xiaohongshu.com/explore/" + item_id[4:]
     if item_id.startswith("taptap-"):
         return "https://www.taptap.cn/moment/" + item_id.removeprefix("taptap-")
     return "https://www.bilibili.com/video/" + item_id
@@ -151,6 +156,9 @@ def collect():
         now = iso()
         seen, errors, counts = [], {}, {}
         loaders = {
+            social.DOUYIN: social.douyin,
+            social.XHS: social.xiaohongshu,
+            social.BILI: lambda: social.bilibili(bili),
             "B站综合热门": popular,
             "TapTap 官方版本公告": official_announcements,
             "已知赛事回放核对": lambda: [video_item(bili(SEED), "已知赛事回放核对")],
@@ -169,6 +177,9 @@ def collect():
             for item in seen:
                 existing = db.execute("SELECT data FROM videos WHERE id=?", (item["id"],)).fetchone()
                 old = json.loads(existing[0]) if existing else {}
+                for field in ("likes", "comments", "shares", "saves", "match_type"):
+                    if item.get(field) is None and old.get(field) is not None:
+                        item[field] = old[field]
                 if item["views"] is None and old.get("views") is not None:
                     item["views"], item["views_at"] = old["views"], old["views_at"]
                 elif item["views"] is not None:

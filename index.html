@@ -33,7 +33,9 @@ function topicEvidence(topic){
 }
 function liveEvidence(r){
  const item=r.live;
- return '<p><a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">打开原始来源</a></p>'+
+ const labels={views:'播放次数',likes:'点赞',comments:'评论',shares:'分享',saves:'收藏'};
+ const metrics=Object.entries(labels).map(([key,label])=>label+' '+(item[key]==null?'未返回':item[key].toLocaleString('zh-CN')));
+ return '<p><a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">打开原始来源</a></p><p>'+esc(metrics.join(" · "))+ '</p>'+(item.match_type?'<p>'+esc(item.match_type)+'</p>':'')+
  '<details><summary>采样记录</summary><ul>'+item.observations.map(o=>'<li>'+esc(o.source)+' · '+esc(stamp(o.sampled))+
  (o.views==null?'':' · 播放 '+o.views.toLocaleString('zh-CN'))+(o.rank==null?'':' · 第 '+o.rank+' 位')+'</li>').join('')+'</ul></details>';
 }

@@ -29,6 +29,7 @@ jobs:
           restore-keys: hotspots-db-
       - name: Build Pages files
         env:
+          TIKHUB_API_KEY: ${{ secrets.TIKHUB_API_KEY }}
           HOTSPOT_KPL_RSS: ${{ vars.HOTSPOT_KPL_RSS }}
           HOTSPOT_POPULAR_RSS: ${{ vars.HOTSPOT_POPULAR_RSS }}
         run: python build_pages.py
@@ -53,4 +54,3 @@ jobs:
       - name: Publish GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-
