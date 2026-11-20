@@ -1,0 +1,16 @@
+name: Apify pilot
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: apify-pilot
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sample once and report returned metrics
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: python3 apify_pilot.py
