@@ -172,7 +172,7 @@ async function syncLive(trigger=false){
   if(trigger&&added){$('filter').value='全部';$('kind').value='全部';selected=records.find(row=>row.live)?.id;version=0}
   const counts=run?Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '):'队列已清空，等待 Apify 采样';
   const errors=run?Object.entries(run.errors).map(([name,error])=>name+'：'+error).join(' · '):'';
-  $('sources').textContent=[counts,errors].filter(Boolean).join('；');
+  $('sources').textContent=[localService?'':'每日 10:17 自动采样（北京时间）',run?'最近采样 '+stamp(run.sampled):'',counts,errors].filter(Boolean).join('；');
   if(trigger||(added&&!records.find(r=>r.id===selected)?.scripts.length))save(added?'同步了 '+added+' 条新记录':'同步完成，采样详情见上方');
   else if(!document.activeElement?.matches('input,textarea')&&!records.find(r=>r.id===selected)?.scripts.length)render();
  }catch(error){$('sources').textContent='读取采样服务失败：'+error.message}
