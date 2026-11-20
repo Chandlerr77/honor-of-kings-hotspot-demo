@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from html.parser import HTMLParser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -96,6 +97,53 @@ def rss(url, source):
         yield dict(id=match[1], title=title, publisher=item.findtext("author", source),
                    published=published, views=None, rank=rank if "综合热门" in source else None, source=source)
 
+OFFICIAL_INDEX = "https://www.taptap.cn/app/2301/topic?group_label_id=193977&type=group_label"
+ANNOUNCEMENT = re.compile(r"[〖【]正式服[〗】]\s*(20\d{2})[.年](\d{1,2})[.月](\d{1,2})日?\s*版本更新公告")
+
+class AnnouncementLinks(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.post_id = None
+        self.parts = []
+        self.items = {}
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "a":
+            match = re.fullmatch(r"/moment/(\d+)(?:\?[^#]*)?", dict(attrs).get("href") or "")
+            self.post_id = match[1] if match else None
+            self.parts = []
+
+    def handle_data(self, data):
+        if self.post_id:
+            self.parts.append(data)
+
+    def handle_endtag(self, tag):
+        if tag != "a" or not self.post_id:
+            return
+        match = ANNOUNCEMENT.search("".join(self.parts))
+        if match:
+            try:
+                version = datetime(*map(int, match.groups())).date().isoformat()
+            except ValueError:
+                pass
+            else:
+                key = "taptap-" + self.post_id
+                self.items[key] = dict(
+                    id=key, title=match[0], publisher="王者荣耀官方资讯", published=None,
+                    version_date=version, views=None, rank=None, source="TapTap 官方资讯索引",
+                )
+        self.post_id = None
+
+def official_announcements():
+    links = AnnouncementLinks()
+    links.feed(fetch(OFFICIAL_INDEX).decode("utf-8", errors="replace"))
+    return sorted(links.items.values(), key=lambda item: item["version_date"], reverse=True)[:12]
+
+def article_url(item_id):
+    if item_id.startswith("taptap-"):
+        return "https://www.taptap.cn/moment/" + item_id.removeprefix("taptap-")
+    return "https://www.bilibili.com/video/" + item_id
+
 def collect():
     if not LOCK.acquire(blocking=False):
         return {"busy": True}
@@ -104,6 +152,7 @@ def collect():
         seen, errors, counts = [], {}, {}
         loaders = {
             "B站综合热门": popular,
+            "TapTap 官方版本公告": official_announcements,
             "已知赛事回放核对": lambda: [video_item(bili(SEED), "已知赛事回放核对")],
         }
         for name, url in FEEDS.items():
@@ -147,7 +196,7 @@ def snapshot():
             observations = db.execute("""SELECT source,sampled,views,rank FROM observations
                 WHERE id=? ORDER BY sampled DESC LIMIT 12""", (item["id"],)).fetchall()
             item.update(first_seen=first, last_seen=last,
-                        url="https://www.bilibili.com/video/" + item["id"],
+                        url=article_url(item["id"]),
                         observations=[dict(source=source,sampled=sampled,views=views,rank=rank)
                                       for source,sampled,views,rank in observations])
             items.append(item)
@@ -166,8 +215,10 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(json.dumps(data, ensure_ascii=False).encode(), "application/json; charset=utf-8", status)
 
     def do_GET(self):
-        if self.path in ("/", "/index.html"):
-            self.reply((ROOT / "index.html").read_bytes(), "text/html; charset=utf-8")
+        if self.path in ("/", "/index.html", "/topics.json"):
+            name = self.path.lstrip("/") or "index.html"
+            content_type = "application/json" if name.endswith(".json") else "text/html"
+            self.reply((ROOT / name).read_bytes(), content_type + "; charset=utf-8")
         elif self.path == "/api/hotspots":
             self.json(snapshot())
         else:
@@ -198,5 +249,3 @@ if __name__ == "__main__":
         threading.Thread(target=scheduled, daemon=True).start()
         print(f"Open http://127.0.0.1:{port}", flush=True)
         server.serve_forever()
-
-

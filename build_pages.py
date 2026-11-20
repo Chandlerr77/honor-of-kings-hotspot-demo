@@ -14,3 +14,4 @@ print(json.dumps(status, ensure_ascii=False))
 shutil.copyfile(root / "index.html", site / "index.html")
 (site / ".nojekyll").touch()
 
+shutil.copyfile(root / "topics.json", site / "topics.json")

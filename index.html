@@ -4,8 +4,8 @@
 :root{color-scheme:dark;--bg:#11141b;--panel:#1a202a;--line:#313a48;--muted:#a8b4c5;--ink:#f0f3f8;--mint:#abf3cd;--warn:#f3cd89}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Microsoft YaHei UI",system-ui,sans-serif}header,main{max-width:1220px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}h1,h2,h3,p{margin:0 0 10px}h1{font-size:clamp(29px,5vw,47px);letter-spacing:-.04em}h2{font-size:20px}h3{font-size:17px}small,.muted{color:var(--muted)}small{font-size:13px}.brand{font-weight:750}.brand b{color:var(--mint);margin-right:9px}.hero{background:radial-gradient(ellipse at top right,#274c44,transparent 67%),#1a232e;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:20px}.hero p{color:#c8d4df}.pill{display:inline-block;border:1px solid #48685e;border-radius:100px;color:var(--mint);padding:2px 10px;font-size:13px;white-space:nowrap}.warn{color:var(--warn);border-color:#69583c}.bad{color:#ffada9;border-color:#754747}.steps,.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap}.steps{margin-top:18px;color:var(--muted);font-size:14px;gap:18px}.steps b{color:var(--mint);margin-right:5px}.layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:16px;align-items:start}.panel{border-radius:15px;border:1px solid var(--line);padding:18px;background:var(--panel)}.list{display:grid;gap:8px;margin-top:14px}.item{text-align:left;display:grid;gap:6px;width:100%;padding:12px;background:#151a22}.item[aria-pressed=true]{border-color:var(--mint);background:#243732}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#151a22}.section{border-top:1px solid var(--line);padding-top:15px;margin-top:16px}button,select,input,textarea{font:inherit;color:inherit;border:1px solid #495466;border-radius:8px;background:#242d3b;padding:7px 11px}button{cursor:pointer;font-size:14px;font-weight:650}button:hover:not(:disabled){border-color:var(--mint)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--mint);color:#101e19;border-color:var(--mint)}textarea,input{width:100%;background:#151a22}textarea{min-height:215px;resize:vertical}label{display:block;margin:9px 0 4px}a{color:var(--mint)}details{margin-top:13px}summary{cursor:pointer}ul{padding-left:22px;margin:8px 0}#notice{min-height:26px;color:var(--mint);margin:0 0 8px}.tabs{margin:10px 0}.tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}.script-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px}@media(max-width:760px){.layout,.summary{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}
 </style></head><body>
 <header><div class="brand"><b>✦</b>游戏营销工作台</div><span class="pill">本地 Demo</span></header>
-<main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button><button id="import-real">导入已查证样本</button><button id="collect">采集模拟热点</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
-<p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
+<main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button><button id="import-real">载入 KPL 回放</button><button id="collect">采集模拟热点</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
+<p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><label for="kind">内容来源</label><select id="kind"><option>全部</option><option>玩法与版本</option><option>自动采样</option><option>赛事回放</option><option>模拟</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
 </main><script>
 'use strict';
 const samples=[
@@ -20,31 +20,36 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;
 let records=[];
 try{records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{}
 let selected=records[0]?.id, version=0;
+const category=r=>r.topicCard?'玩法与版本':r.live?'自动采样':r.real?'赛事回放':'模拟';
 function save(message){
  try{localStorage.setItem(KEY,JSON.stringify(records))}catch{message+='。浏览器存储不可用，刷新会清空进度'}
  $('notice').textContent=message;
  render();
 }
 const statusClass=s=>s==='可信'?'':s==='存疑'?' warn':' bad';
+function topicEvidence(topic){
+ const link=(url,label)=>'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+label+'</a>';
+ return '<p>'+link(topic.url,'查看官方来源')+(topic.related?' · '+link(topic.related,'查看官方视频'):'')+'</p><p class="muted">选题方向 · '+esc(topic.angle)+'</p>';
+}
 function liveEvidence(r){
  const item=r.live;
- return '<p><a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">打开 B 站原片</a></p>'+
+ return '<p><a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">打开原始来源</a></p>'+
  '<details><summary>采样记录</summary><ul>'+item.observations.map(o=>'<li>'+esc(o.source)+' · '+esc(stamp(o.sampled))+
  (o.views==null?'':' · 播放 '+o.views.toLocaleString('zh-CN'))+(o.rank==null?'':' · 第 '+o.rank+' 位')+'</li>').join('')+'</ul></details>';
 }
 function render(){
- const visible=records.filter(r=>$('filter').value==='全部'||r.trust===$('filter').value);
+ const visible=records.filter(r=>($('filter').value==='全部'||r.trust===$('filter').value)&&($('kind').value==='全部'||category(r)===$('kind').value));
  if(!visible.some(r=>r.id===selected)){selected=visible[0]?.id;version=0}
- $('list').innerHTML=visible.map(r=>'<button class="item" data-id="'+r.id+'" aria-pressed="'+(r.id===selected)+'"><strong>'+esc(r.title)+'</strong><small>'+(r.live?esc(r.live.source):r.real?'播放快照约 79.3 万':'热度 '+r.heat)+' · '+r.trust+(r.real?' · 真实样本':' · 模拟')+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
+ $('list').innerHTML=visible.map(r=>'<button class="item" data-id="'+r.id+'" aria-pressed="'+(r.id===selected)+'"><strong>'+esc(r.title)+'</strong><small>'+(r.topicCard?esc(r.topicCard.label):r.live?esc(r.live.source):r.real?'播放快照约 79.3 万':'热度 '+r.heat)+' · '+r.trust+' · '+category(r)+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
  const r=visible.find(r=>r.id===selected);
  if(!r){$('detail').innerHTML='<h2>开始选题</h2><p class="muted">采集演示热点后，即可查看证据、确认选题并生成脚本。</p>';return}
  const eligible=r.trust==='可信'&&r.score>=70;
  const evidence=r.evidence.map(([name,body])=>'<li><strong>'+esc(name)+'</strong> · '+esc(body)+'</li>').join('');
  const v=r.scripts[version];
  $('detail').innerHTML=
- '<div class="script-head"><span class="pill'+statusClass(r.trust)+'">'+r.trust+'</span><small>'+(r.live?esc(r.live.source)+(r.live.views==null?'':' · 播放 '+r.live.views.toLocaleString('zh-CN')):r.real?'B 站官方回放 · 播放快照约 79.3 万':'模拟来源 · 热度 '+r.heat)+'</small></div>'+
+ '<div class="script-head"><span class="pill'+statusClass(r.trust)+'">'+r.trust+'</span><small>'+(r.topicCard?esc(r.topicCard.label):r.live?esc(r.live.source)+(r.live.views==null?'':' · 播放 '+r.live.views.toLocaleString('zh-CN')):r.real?'B 站官方回放 · 播放快照约 79.3 万':'模拟来源 · 热度 '+r.heat)+'</small></div>'+
  '<h2>'+esc(r.title)+'</h2><small>发布时间 '+esc(r.published)+' · 采集时间 '+esc(r.ingested)+'</small>'+
- '<div class="summary"><section class="box"><h3>核验证据</h3><p>'+esc(r.reason)+'</p><ul>'+evidence+'</ul>'+(r.live?liveEvidence(r):r.real?'<a href="https://www.bilibili.com/video/BV1HvWJ6WE8B?p=1" target="_blank" rel="noopener noreferrer">打开 B 站赛事原片</a>':'')+'</section>'+
+ '<div class="summary"><section class="box"><h3>核验证据</h3><p>'+esc(r.reason)+'</p><ul>'+evidence+'</ul>'+(r.topicCard?topicEvidence(r.topicCard):r.live?liveEvidence(r):r.real?'<a href="https://www.bilibili.com/video/BV1HvWJ6WE8B?p=1" target="_blank" rel="noopener noreferrer">打开 B 站赛事原片</a>':'')+'</section>'+
  '<section class="box"><h3>游戏匹配</h3>'+(r.trust==='可信'?'<p><strong>'+r.score+' / 100</strong> · 门槛 70</p><p>'+esc(r.match)+'</p>':'<p class="muted">等待可信结论，暂不进入匹配。</p>')+'</section></div>'+
  (r.review?'<p>复核记录 · '+esc(r.review)+'</p>':'')+
  (r.trust==='存疑'?'<label for="review">补充证据与复核理由</label><input id="review" placeholder="填写核对的来源和结果">'+(r.live?'<label for="score">适配分（0–100）</label><input id="score" type="number" min="0" max="100"><label for="match">适配理由</label><input id="match">':'')+'<div class="actions section"><button data-action="credible">复核为可信</button><button data-action="false">复核为不实</button></div>':'')+
@@ -68,9 +73,17 @@ function checkDraft(){
  return errors;
 }
 function variants(r){
+ if(r.topicCard){
+  const card=r.topicCard;
+  const history=card.id.startsWith('topic-resonance')?' 字幕注明：本期限时档期已结束。':'';
+  return [
+   {name:'A · 现象切入',seconds:42,body:'00–05 秒｜开场：'+card.hook+history+'\n05–32 秒｜实录：'+card.shot+'\n32–42 秒｜结尾：邀请观众分享自己的玩法体验。\n#王者荣耀 #玩法观察'},
+   {name:'B · 公告解读',seconds:36,body:'00–05 秒｜开场：'+card.title+'。'+history+'\n05–27 秒｜实录：先出示官方来源，口播「'+card.summary+'」再切到自录或示意画面。\n27–36 秒｜结尾：你更想看哪项玩法的拆解？\n#王者荣耀 #版本解读'}
+  ].map(draft=>({...draft,status:'待审',history:[]}));
+ }
  if(r.live)return ['热点切入','实录复盘'].map((name,i)=>({
   name,seconds:i?36:42,history:[],status:'待审',
-  body:(i?'00–05 秒｜开场：今天用一段自录对局，看这条热点能给排位什么启发。':'00–05 秒｜开场：最近有条视频引发讨论，你怎么看？')+'\n05–27 秒｜实录：片头标出来源标题「'+r.title+'」，依据复核要点「'+r.review+'」写口播；切入自录王者峡谷画面，展示「'+r.match+'」对应的情境。\n27–'+(i?36:42)+' 秒｜结尾：请观众分享自己的处理方式。\n#王者荣耀 #王者峡谷'
+  body:(i?'00–05 秒｜开场：今天用一段自录对局，看这条热点能给排位什么启发。':'00–05 秒｜开场：最近有条内容值得聊聊，你怎么看？')+'\n05–27 秒｜实录：片头标出来源标题「'+r.title+'」，依据复核要点「'+r.review+'」写口播；切入自录王者峡谷画面，展示「'+r.match+'」对应的情境。\n27–'+(i?36:42)+' 秒｜结尾：请观众分享自己的处理方式。\n#王者荣耀 #王者峡谷'
  }));
  if(r.real)return ['赛后讨论','开团教学'].map((name,i)=>({
   name,seconds:40,history:[],status:'待审',
@@ -92,7 +105,7 @@ $('import-real').addEventListener('click',()=>{
   score:96,match:'赛事适合切入团战沟通与跟进，用自录对局演示。',
   confirmed:false,scripts:[]
  });
- $('filter').value='全部';selected=id;version=0;save('已载入赛事快照，请查看原片并复核');
+ $('filter').value='全部';$('kind').value='全部';selected=id;version=0;save('已载入赛事快照，请查看原片并复核');
 });
 $('collect').addEventListener('click',()=>{
  const time=new Date();
@@ -103,10 +116,11 @@ $('collect').addEventListener('click',()=>{
   records.push({...s,published:stamp(new Date(time-s.minutes*60000)),ingested:stamp(time),trust:s.id==='bell'?'存疑':s.id==='gift'?'不实':'可信',confirmed:false,scripts:[]});
   count++;
  }
- $('filter').value='全部';
+ $('filter').value='全部';$('kind').value='全部';
  save(count?'已采集 '+count+' 条模拟热点':'热点已去重，审核进度已保留');
 });
 $('filter').addEventListener('change',render);
+$('kind').addEventListener('change',render);
 $('list').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(button){selected=button.dataset.id;version=0;render()}});
 $('detail').addEventListener('input',e=>{if(['duration','script'].includes(e.target.id))checkDraft()});
 $('detail').addEventListener('click',e=>{
@@ -158,10 +172,10 @@ async function syncLive(trigger=false){
      match:'当前还没有适配评分。复核时请评估是否适合王者荣耀营销。',confirmed:false,scripts:[]};
     records.push(record);added++;
    }
-   Object.assign(record,{live:item,title:item.title,published:stamp(item.published),ingested:stamp(item.first_seen),
+   Object.assign(record,{live:item,title:item.title,published:item.version_date?'版本日期 '+item.version_date:stamp(item.published),ingested:stamp(item.first_seen),
     evidence:[[item.publisher,item.source+' · 最近采样 '+stamp(item.last_seen)]]});
   }
-  if(trigger&&added){$('filter').value='全部';selected=records.find(row=>row.live)?.id;version=0}
+  if(trigger&&added){$('filter').value='全部';$('kind').value='全部';selected=records.find(row=>row.live)?.id;version=0}
   const counts=run?Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '):'等待首次采样';
   const errors=run?Object.entries(run.errors).map(([name,error])=>name+'：'+error).join(' · '):'';
   $('sources').textContent=[counts,errors,'间隔 '+(interval/60)+' 分钟'].filter(Boolean).join('；');
@@ -179,6 +193,20 @@ async function fetchData(url,options){
 }
 if(location.protocol!=='file:'){
  $('live').hidden=false;
+ if(!localService)$('live').textContent='刷新采样快照';
+ fetchData('./topics.json').then(topics=>{
+  const newRecords=[];
+  for(const topic of topics){
+   const existing=records.find(row=>row.id===topic.id);
+   const fields={title:topic.title,topicCard:topic,real:true,published:topic.date,ingested:'2026-11-21（人工查证）',
+    evidence:[[topic.publisher,topic.summary]],reason:'请核对官方来源与适用版本，再确认选题。'};
+   if(existing)Object.assign(existing,fields);
+   else newRecords.push({...fields,id:topic.id,trust:'存疑',score:94,match:topic.angle,confirmed:false,scripts:[]});
+  }
+  records.unshift(...newRecords);
+  if(newRecords.length&&!selected)selected=topics[0]?.id;
+  save('已载入 '+topics.length+' 条官方来源玩法与版本选题');
+ }).catch(error=>{$('notice').textContent='玩法专题载入失败：'+error.message});
  $('live').addEventListener('click',()=>syncLive(true));
  syncLive();setInterval(syncLive,20000);
 }else{
@@ -186,8 +214,3 @@ if(location.protocol!=='file:'){
 }
 render();
 </script></body></html>
-
-
-
-
-
