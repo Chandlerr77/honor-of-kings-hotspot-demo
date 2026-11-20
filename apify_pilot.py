@@ -18,7 +18,7 @@ def summarize(rows):
             "published": row.get("published_at"),
             "has_link": True,
             "has_exact_tag": any(str(tag).lstrip("#") == "王者荣耀" for tag in row.get("hashtags") or []),
-            "plays": stats.get("plays", stats.get("play_count", row.get("play_count"))),
+            "plays": stats.get("views"),
             **{key: stats.get(key) for key in ("likes", "comments", "shares", "favorites")},
         })
     return {"returned_rows": len(rows), "inspected": len(checks), "posts": checks}

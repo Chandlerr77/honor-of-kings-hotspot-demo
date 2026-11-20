@@ -53,14 +53,10 @@ def collect():
         return {"busy": True}
     try:
         now = iso()
-        seen, errors, counts = [], {}, {}
-        loaders = {
-            name: lambda platform=platform: trends.collect(platform)
-            for platform, name in trends.SOURCE.items()
-        }
-        for name, load in loaders.items():
+        seen, errors, counts, filtering = [], {}, {}, {}
+        for platform, name in trends.SOURCE.items():
             try:
-                items = list(load())
+                items, filtering[name] = trends.scan(platform)
                 counts[name] = len(items)
                 seen.extend(items)
             except (OSError, ValueError, KeyError, TypeError) as error:
@@ -83,7 +79,7 @@ def collect():
                 db.execute("INSERT OR REPLACE INTO observations VALUES (?, ?, ?, ?, ?)",
                            (item["id"], item["source"], now,
                             item["views"] if item.get("views_at") == now else None, item["rank"]))
-            status = dict(sampled=now, counts=counts, errors=errors)
+            status = dict(sampled=now, counts=counts, errors=errors, filtering=filtering)
             db.execute("INSERT INTO runs VALUES (?,?)", (now, json.dumps(status, ensure_ascii=False)))
         return status
     finally:
@@ -96,6 +92,8 @@ def snapshot():
         items = []
         for data, first, last in rows:
             item = json.loads(data)
+            if trends.rejection(item):
+                continue
             observations = db.execute("""SELECT source,sampled,views,rank FROM observations
                 WHERE id=? ORDER BY sampled DESC LIMIT 12""", (item["id"],)).fetchall()
             item.update(first_seen=first, last_seen=last,

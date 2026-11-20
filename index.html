@@ -12,6 +12,7 @@ const KEY='honor-of-kings-apify-v2';
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let records=[];
+let activeIds=new Set();
 try{localStorage.removeItem('honor-of-kings-editor-v1');records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{}
 let selected=records[0]?.id, version=0;
 const category=r=>r.topicCard?'玩法与版本':r.live?'自动采样':r.real?'赛事回放':'模拟';
@@ -34,7 +35,7 @@ function liveEvidence(r){
  (o.views==null?'':' · 播放 '+o.views.toLocaleString('zh-CN'))+(o.rank==null?'':' · 第 '+o.rank+' 位')+'</li>').join('')+'</ul></details>';
 }
 function render(){
- const visible=records.filter(r=>($('filter').value==='全部'||r.trust===$('filter').value)&&($('kind').value==='全部'||category(r)===$('kind').value));
+ const visible=records.filter(r=>activeIds.has(r.id)&&($('filter').value==='全部'||r.trust===$('filter').value)&&($('kind').value==='全部'||category(r)===$('kind').value));
  if(!visible.some(r=>r.id===selected)){selected=visible[0]?.id;version=0}
  $('list').innerHTML=visible.map(r=>'<button class="item" data-id="'+r.id+'" aria-pressed="'+(r.id===selected)+'"><strong>'+esc(r.title)+'</strong><small>'+(r.topicCard?esc(r.topicCard.label):r.live?esc(r.live.source):r.real?'播放快照约 79.3 万':'热度 '+r.heat)+' · '+r.trust+' · '+category(r)+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
  const r=visible.find(r=>r.id===selected);
@@ -156,6 +157,7 @@ async function syncLive(trigger=false){
  try{
   if(trigger&&localService)await fetchData('/api/collect',{method:'POST'});
   const {items,run,trends=[]}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
+  activeIds=new Set(items.map(item=>'live-'+item.id));
   renderTrends(trends);
   let added=0;
   for(const item of items){
@@ -170,11 +172,15 @@ async function syncLive(trigger=false){
     evidence:[[item.publisher,item.source+' · 最近采样 '+stamp(item.last_seen)]]});
   }
   if(trigger&&added){$('filter').value='全部';$('kind').value='全部';selected=records.find(row=>row.live)?.id;version=0}
-  const counts=run?Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '):'队列已清空，等待 Apify 采样';
+  const counts=run?Object.entries(run.counts).map(([name,n])=>{
+   const stats=run.filtering?.[name];
+   const excluded=stats?Object.entries(stats.rejected).map(([reason,count])=>reason+' '+count+' 条').join('、'):'';
+   return name+' 入库 '+n+' 条'+(stats?' / 候选 '+stats.candidates+' 条':'')+(excluded?'（'+excluded+'）':'');
+  }).join('；'):'队列已清空，等待 Apify 采样';
   const errors=run?Object.entries(run.errors).map(([name,error])=>name+'：'+error).join(' · '):'';
   $('sources').textContent=[localService?'':'每日 10:17 自动采样（北京时间）',run?'最近采样 '+stamp(run.sampled):'',counts,errors].filter(Boolean).join('；');
   if(trigger||(added&&!records.find(r=>r.id===selected)?.scripts.length))save(added?'同步了 '+added+' 条新记录':'同步完成，采样详情见上方');
-  else if(!document.activeElement?.matches('input,textarea')&&!records.find(r=>r.id===selected)?.scripts.length)render();
+  else if(!activeIds.has(selected)||(!document.activeElement?.matches('input,textarea')&&!records.find(r=>r.id===selected)?.scripts.length))render();
  }catch(error){$('sources').textContent='读取采样服务失败：'+error.message}
  finally{button.disabled=false}
 }

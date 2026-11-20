@@ -21,16 +21,14 @@ THEMES = {
 }
 GENERIC = {"王者荣耀", "王者", "游戏", "手游", "搞笑", "电子竞技", "推荐", "热门", "游戏日常", "王者荣耀日常", "上热门"}
 
-def rows(platform):
+def request_rows(platform, payload):
     token = os.getenv("APIFY_TOKEN")
     if not token:
         raise ValueError("未配置 APIFY_TOKEN")
-    actor, options = ACTORS[platform]
-    settings = {key: value for key, value in options.items() if key != "playCounts"}
+    actor, _ = ACTORS[platform]
     req = Request(
         f"https://api.apify.com/v2/actors/dataxapi~{actor}/run-sync-get-dataset-items?maxTotalChargeUsd=0.05&timeout=120",
-        data=json.dumps({"searchQueries": ["王者荣耀"], "publishedWithin": "week",
-                         "sort": "popular", **settings}).encode(),
+        data=json.dumps(payload).encode(),
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
     )
     with urlopen(req, timeout=140) as response:
@@ -38,6 +36,11 @@ def rows(platform):
     if not isinstance(data, list):
         raise ValueError("Apify 未返回作品列表")
     return data
+
+def rows(platform):
+    _, options = ACTORS[platform]
+    return request_rows(platform, {"searchQueries": ["王者荣耀"], "publishedWithin": "week",
+                                   "sort": "popular", **options})
 
 def post_date(value):
     try:
@@ -58,13 +61,65 @@ def collect(platform):
         if not (published and title and re.fullmatch(pattern, post_id)):
             continue
         tags = [tag.strip().lstrip("#")[:40] for tag in row.get("hashtags") or [] if isinstance(tag, str)]
+        if not ("王者荣耀" in title or "王者荣耀" in body or "王者荣耀" in tags
+                or any(alias.casefold() in (title+" "+body+" "+" ".join(tags)).casefold()
+                       for theme, aliases in THEMES.items() if theme != "S45 上分与出装" for alias in aliases)):
+            continue
         stats = row.get("metrics") or {}
+        media_type = row.get("type")
+        if platform == "douyin" and row.get("kind") == "video":
+            media_type = media_type or "video"
         yield dict(id=prefix + post_id, title=title[:180], publisher=(row.get("author") or {}).get("name") or SOURCE[platform],
-                   published=published, views=social.count(stats.get("plays")), rank=None,
+                   published=published, views=social.count(stats.get("views")), rank=None, media_type=media_type,
                    match_type="话题 #王者荣耀" if "王者荣耀" in tags else "关键词 王者荣耀",
                    likes=social.count(stats.get("likes")), comments=social.count(stats.get("comments")),
                    saves=social.count(stats.get("favorites")), shares=social.count(stats.get("shares")),
                    tags=tags[:30], source=SOURCE[platform])
+
+MIN_VIDEO_VIEWS = 100_000
+MIN_NOTE_LIKES = 1_000
+MIN_NOTE_COMMENTS = 50
+
+def rejection(item):
+    if not post_date(item.get("published")):
+        return "超过 7 天或缺少发布时间"
+    if item.get("media_type") == "video":
+        views = item.get("views")
+        if views is None:
+            return "缺少可核验播放量"
+        if views < MIN_VIDEO_VIEWS:
+            return "播放量低于 10 万"
+        return None
+    if item.get("media_type") in {"image", "note"}:
+        if (item.get("likes") or 0) < MIN_NOTE_LIKES or (item.get("comments") or 0) < MIN_NOTE_COMMENTS:
+            return "图文互动低于门槛"
+        return None
+    return "作品类型未确认"
+
+def scan(platform):
+    rejected = defaultdict(int)
+    accepted = []
+    candidates = list(collect(platform))
+    if platform == "douyin":
+        missing = [item for item in candidates if item["views"] is None]
+        if missing:
+            try:
+                stats = request_rows(platform, {"playCountVideoUrls": [item["id"][3:] for item in missing[:8]]})
+                totals = {
+                    str(row.get("id")): social.count((row.get("metrics") or {}).get("views"))
+                    for row in stats if isinstance(row, dict)
+                }
+                for item in missing:
+                    item["views"] = totals.get(item["id"][3:])
+            except (OSError, ValueError, TypeError):
+                pass
+    for item in candidates:
+        reason = rejection(item)
+        if reason:
+            rejected[reason] += 1
+        else:
+            accepted.append(item)
+    return accepted, {"candidates": len(candidates), "rejected": dict(rejected)}
 
 def group_topics(items):
     buckets = defaultdict(dict)
