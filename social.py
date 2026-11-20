@@ -5,6 +5,7 @@ import re
 import urllib.request
 from datetime import datetime, timedelta, timezone
 from html import unescape
+from urllib.error import HTTPError
 from urllib.parse import urlencode
 
 QUERY = "王者荣耀"
@@ -28,6 +29,18 @@ def recent(value):
     now = datetime.now(timezone.utc)
     return when.isoformat() if now - timedelta(days=DAYS) <= when <= now else None
 
+def explain_denial(error):
+    body = error.read(8192).decode("utf-8", errors="replace").lower()
+    if "cloudflare" in body or error.headers.get("CF-Mitigated") == "challenge":
+        return "TikHub 403：请求被网关拦截"
+    if "email" in body and any(word in body for word in ("verif", "activat")) or "邮箱" in body:
+        return "TikHub 403：响应指向邮箱验证"
+    if ("account" in body and "disabled" in body) or "账号已禁用" in body:
+        return "TikHub 403：响应指向账号停用"
+    if any(word in body for word in ("permission", "scope", "权限")):
+        return "TikHub 403：响应指向接口或 Key 权限"
+    return "TikHub 403：服务端未返回可识别的拒绝原因"
+
 def provider(path, params, *, post=False):
     key = os.getenv("TIKHUB_API_KEY")
     if not key:
@@ -40,8 +53,13 @@ def provider(path, params, *, post=False):
         "Authorization": "Bearer " + key,
         "Content-Type": "application/json",
     })
-    with urllib.request.urlopen(req, timeout=20) as response:
-        payload = json.loads(response.read(5_000_000))
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            payload = json.loads(response.read(5_000_000))
+    except HTTPError as error:
+        if error.code == 403:
+            raise ValueError(explain_denial(error)) from None
+        raise
     if payload.get("code") != 200 or not isinstance(payload.get("data"), (dict, list)):
         raise ValueError("数据供应商未返回有效结果")
     return payload["data"]
@@ -114,4 +132,3 @@ def bilibili(search):
             yield dict(id=bvid, title=title, publisher=item.get("author", "B站创作者"),
                        published=published, views=count(item.get("play")), rank=None,
                        match_type="关键词 王者荣耀", source=BILI)
-
