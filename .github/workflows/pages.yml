@@ -1,0 +1,56 @@
+name: Sample and deploy Pages
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '13,43 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-sampling
+  cancel-in-progress: false
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache/restore@v4
+        with:
+          path: .data/hotspots.sqlite3
+          key: hotspots-db-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: hotspots-db-
+      - name: Build Pages files
+        env:
+          HOTSPOT_KPL_RSS: ${{ vars.HOTSPOT_KPL_RSS }}
+          HOTSPOT_POPULAR_RSS: ${{ vars.HOTSPOT_POPULAR_RSS }}
+        run: python build_pages.py
+      - uses: actions/cache/save@v4
+        with:
+          path: .data/hotspots.sqlite3
+          key: hotspots-db-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: sample
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
