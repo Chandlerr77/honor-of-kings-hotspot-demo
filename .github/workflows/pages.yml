@@ -5,6 +5,11 @@ on:
   schedule:
     - cron: '13,43 * * * *'
   workflow_dispatch:
+    inputs:
+      apify_trends:
+        description: Run one capped Apify trend sample
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -29,6 +34,8 @@ jobs:
           restore-keys: hotspots-db-
       - name: Build Pages files
         env:
+          HOTSPOT_APIFY_PILOT: ${{ inputs.apify_trends }}
+          APIFY_TOKEN: ${{ inputs.apify_trends && secrets.APIFY_TOKEN || '' }}
           TIKHUB_API_KEY: ${{ secrets.TIKHUB_API_KEY }}
           HOTSPOT_KPL_RSS: ${{ vars.HOTSPOT_KPL_RSS }}
           HOTSPOT_POPULAR_RSS: ${{ vars.HOTSPOT_POPULAR_RSS }}

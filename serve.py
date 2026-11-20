@@ -1,6 +1,7 @@
 """Local Honor of Kings sampling service. Python 3.10+, standard library only."""
 import json
 import social
+import trends
 import os
 import re
 import sqlite3
@@ -163,6 +164,11 @@ def collect():
             "TapTap 官方版本公告": official_announcements,
             "已知赛事回放核对": lambda: [video_item(bili(SEED), "已知赛事回放核对")],
         }
+        if os.getenv("HOTSPOT_APIFY_PILOT") == "true":
+            loaders.pop(social.DOUYIN)
+            loaders.pop(social.XHS)
+            for platform, name in trends.SOURCE.items():
+                loaders[name] = lambda platform=platform: trends.collect(platform)
         for name, url in FEEDS.items():
             if url:
                 loaders[name] = lambda url=url, name=name: rss(url, name)
@@ -177,7 +183,7 @@ def collect():
             for item in seen:
                 existing = db.execute("SELECT data FROM videos WHERE id=?", (item["id"],)).fetchone()
                 old = json.loads(existing[0]) if existing else {}
-                for field in ("likes", "comments", "shares", "saves", "match_type"):
+                for field in ("likes", "comments", "shares", "saves", "match_type", "tags"):
                     if item.get(field) is None and old.get(field) is not None:
                         item[field] = old[field]
                 if item["views"] is None and old.get("views") is not None:
@@ -211,7 +217,7 @@ def snapshot():
                         observations=[dict(source=source,sampled=sampled,views=views,rank=rank)
                                       for source,sampled,views,rank in observations])
             items.append(item)
-    return dict(items=items, run=json.loads(run[0]) if run else None, interval=INTERVAL)
+    return dict(items=items, trends=trends.group_topics(items), run=json.loads(run[0]) if run else None, interval=INTERVAL)
 
 class Handler(BaseHTTPRequestHandler):
     def reply(self, data, content_type, status=200):

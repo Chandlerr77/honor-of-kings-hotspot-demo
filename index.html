@@ -2,10 +2,10 @@
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>热点编辑台 · 游戏营销 Demo</title>
 <style>
 :root{color-scheme:dark;--bg:#11141b;--panel:#1a202a;--line:#313a48;--muted:#a8b4c5;--ink:#f0f3f8;--mint:#abf3cd;--warn:#f3cd89}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Microsoft YaHei UI",system-ui,sans-serif}header,main{max-width:1220px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}h1,h2,h3,p{margin:0 0 10px}h1{font-size:clamp(29px,5vw,47px);letter-spacing:-.04em}h2{font-size:20px}h3{font-size:17px}small,.muted{color:var(--muted)}small{font-size:13px}.brand{font-weight:750}.brand b{color:var(--mint);margin-right:9px}.hero{background:radial-gradient(ellipse at top right,#274c44,transparent 67%),#1a232e;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:20px}.hero p{color:#c8d4df}.pill{display:inline-block;border:1px solid #48685e;border-radius:100px;color:var(--mint);padding:2px 10px;font-size:13px;white-space:nowrap}.warn{color:var(--warn);border-color:#69583c}.bad{color:#ffada9;border-color:#754747}.steps,.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap}.steps{margin-top:18px;color:var(--muted);font-size:14px;gap:18px}.steps b{color:var(--mint);margin-right:5px}.layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:16px;align-items:start}.panel{border-radius:15px;border:1px solid var(--line);padding:18px;background:var(--panel)}.list{display:grid;gap:8px;margin-top:14px}.item{text-align:left;display:grid;gap:6px;width:100%;padding:12px;background:#151a22}.item[aria-pressed=true]{border-color:var(--mint);background:#243732}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#151a22}.section{border-top:1px solid var(--line);padding-top:15px;margin-top:16px}button,select,input,textarea{font:inherit;color:inherit;border:1px solid #495466;border-radius:8px;background:#242d3b;padding:7px 11px}button{cursor:pointer;font-size:14px;font-weight:650}button:hover:not(:disabled){border-color:var(--mint)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--mint);color:#101e19;border-color:var(--mint)}textarea,input{width:100%;background:#151a22}textarea{min-height:215px;resize:vertical}label{display:block;margin:9px 0 4px}a{color:var(--mint)}details{margin-top:13px}summary{cursor:pointer}ul{padding-left:22px;margin:8px 0}#notice{min-height:26px;color:var(--mint);margin:0 0 8px}.tabs{margin:10px 0}.tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}.script-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px}@media(max-width:760px){.layout,.summary{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}
-</style></head><body>
+.trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.trend-panel{margin-bottom:16px}.trend-platform{margin:10px 0 0}.trend-post{display:block;text-align:left;background:none;border:0;padding:0;color:var(--mint);font-weight:500}.trend-post:hover{text-decoration:underline}</style></head><body>
 <header><div class="brand"><b>✦</b>游戏营销工作台</div><span class="pill">本地 Demo</span></header>
 <main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button><button id="import-real">载入 KPL 回放</button><button id="collect">采集模拟热点</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
-<p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><label for="kind">内容来源</label><select id="kind"><option>全部</option><option>玩法与版本</option><option>自动采样</option><option>赛事回放</option><option>模拟</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
+<section class="panel trend-panel" id="trends" hidden><h2>近 7 天讨论话题</h2><p class="muted">至少两条相关作品才归为一组，优先展示多个平台都有讨论的话题。以下为采到的样本。</p><div class="trend-grid"></div></section><p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><label for="kind">内容来源</label><select id="kind"><option>全部</option><option>玩法与版本</option><option>自动采样</option><option>赛事回放</option><option>模拟</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
 </main><script>
 'use strict';
 const samples=[
@@ -159,12 +159,34 @@ $('detail').addEventListener('click',e=>{
 });
 const localService=location.protocol==='http:' && ['127.0.0.1','localhost'].includes(location.hostname);
 const stamp=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'未提供';
+function renderTrends(topics){
+ const root=$('trends');
+ root.hidden=!topics.length;
+ root.querySelector('.trend-grid').innerHTML=topics.map(topic=>
+  '<div class="box"><h3>'+esc(topic.title)+'</h3><small>'+topic.count+' 条样本 · '+topic.platforms.length+' 个平台</small>'+
+  topic.platforms.map(platform=>'<p class="trend-platform"><strong>'+esc(platform.name)+'</strong> · '+platform.count+' 条</p>'+
+   '<ul>'+platform.examples.map(item=>
+    '<li><button class="trend-post" data-post="'+esc(item.id)+'">'+esc(item.title)+'</button><small>'+
+    [item.likes==null?'':'点赞 '+item.likes,item.comments==null?'':'评论 '+item.comments,
+     item.views==null?'':'播放 '+item.views].filter(Boolean).join(' · ')+'</small></li>'
+   ).join('')+'</ul>'
+  ).join('')+'</div>'
+ ).join('');
+}
+$('trends').addEventListener('click',e=>{
+ const target=e.target.closest('[data-post]');
+ if(!target)return;
+ $('filter').value='全部';$('kind').value='全部';
+ selected='live-'+target.dataset.post;version=0;
+ render();$('detail').scrollIntoView({block:'start'});
+});
 async function syncLive(trigger=false){
  const button=$('live');
  button.disabled=true;
  try{
   if(trigger&&localService)await fetchData('/api/collect',{method:'POST'});
-  const {items,run,interval}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
+  const {items,run,interval,trends=[]}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
+  renderTrends(trends);
   let added=0;
   for(const item of items){
    const id='live-'+item.id;
