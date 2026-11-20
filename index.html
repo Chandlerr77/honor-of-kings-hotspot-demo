@@ -4,21 +4,15 @@
 :root{color-scheme:dark;--bg:#11141b;--panel:#1a202a;--line:#313a48;--muted:#a8b4c5;--ink:#f0f3f8;--mint:#abf3cd;--warn:#f3cd89}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Microsoft YaHei UI",system-ui,sans-serif}header,main{max-width:1220px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}h1,h2,h3,p{margin:0 0 10px}h1{font-size:clamp(29px,5vw,47px);letter-spacing:-.04em}h2{font-size:20px}h3{font-size:17px}small,.muted{color:var(--muted)}small{font-size:13px}.brand{font-weight:750}.brand b{color:var(--mint);margin-right:9px}.hero{background:radial-gradient(ellipse at top right,#274c44,transparent 67%),#1a232e;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:20px}.hero p{color:#c8d4df}.pill{display:inline-block;border:1px solid #48685e;border-radius:100px;color:var(--mint);padding:2px 10px;font-size:13px;white-space:nowrap}.warn{color:var(--warn);border-color:#69583c}.bad{color:#ffada9;border-color:#754747}.steps,.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap}.steps{margin-top:18px;color:var(--muted);font-size:14px;gap:18px}.steps b{color:var(--mint);margin-right:5px}.layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:16px;align-items:start}.panel{border-radius:15px;border:1px solid var(--line);padding:18px;background:var(--panel)}.list{display:grid;gap:8px;margin-top:14px}.item{text-align:left;display:grid;gap:6px;width:100%;padding:12px;background:#151a22}.item[aria-pressed=true]{border-color:var(--mint);background:#243732}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#151a22}.section{border-top:1px solid var(--line);padding-top:15px;margin-top:16px}button,select,input,textarea{font:inherit;color:inherit;border:1px solid #495466;border-radius:8px;background:#242d3b;padding:7px 11px}button{cursor:pointer;font-size:14px;font-weight:650}button:hover:not(:disabled){border-color:var(--mint)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--mint);color:#101e19;border-color:var(--mint)}textarea,input{width:100%;background:#151a22}textarea{min-height:215px;resize:vertical}label{display:block;margin:9px 0 4px}a{color:var(--mint)}details{margin-top:13px}summary{cursor:pointer}ul{padding-left:22px;margin:8px 0}#notice{min-height:26px;color:var(--mint);margin:0 0 8px}.tabs{margin:10px 0}.tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}.script-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px}@media(max-width:760px){.layout,.summary{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}
 .trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.trend-panel{margin-bottom:16px}.trend-platform{margin:10px 0 0}.trend-post{display:block;text-align:left;background:none;border:0;padding:0;color:var(--mint);font-weight:500}.trend-post:hover{text-decoration:underline}</style></head><body>
 <header><div class="brand"><b>✦</b>游戏营销工作台</div><span class="pill">本地 Demo</span></header>
-<main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button><button id="import-real">载入 KPL 回放</button><button id="collect">采集模拟热点</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
+<main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
 <section class="panel trend-panel" id="trends" hidden><h2>近 7 天讨论话题</h2><p class="muted">至少两条相关作品才归为一组，优先展示多个平台都有讨论的话题。以下为采到的样本。</p><div class="trend-grid"></div></section><p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><label for="kind">内容来源</label><select id="kind"><option>全部</option><option>玩法与版本</option><option>自动采样</option><option>赛事回放</option><option>模拟</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
 </main><script>
 'use strict';
-const samples=[
- {id:'cloud',title:'朋友间的无声默契挑战引发二创',heat:97,minutes:22,topic:'开黑默契',evidence:[['创作者原片','原片展示朋友在无台词条件下完成协作挑战。'],['短视频社区专题','独立记录同一作品的发布时间和二创趋势。']],reason:'样例中的两条独立证据指向同一作品和发布时间。',score:94,match:'可用王者峡谷 5v5 对局展示队友如何通过集合信号、站位和进场时机打出配合。'},
- {id:'bell',title:'只听声音猜游戏挑战升温',heat:84,minutes:41,topic:'声音猜游戏',evidence:[['UP 主视频','原片用音效片段考验观众能否猜出游戏。']],reason:'样例目前只有单一投稿，待运营补充独立来源。',score:87,match:'可用自录的王者峡谷对局音效设计互动竞猜，并用对应画面揭晓。'},
- {id:'gift',title:'传某联动将赠送全服道具',heat:76,minutes:68,topic:'道具',evidence:[['二传短视频','内容转述未署名截图。'],['活动方公告','公告明确否认该赠送活动。']],reason:'样例中活动方对活动承诺有明确否认。',score:0,match:''},
- {id:'sale',title:'购物折扣口诀在评论区流行',heat:62,minutes:90,topic:'购物口诀',evidence:[['原始投稿','视频记录折扣口诀。'],['社区独立观察','同一关键词下出现独立模仿。']],reason:'样例中有原始内容和独立观察。',score:34,match:'促销梗和5v5 团队竞技的关联较弱，容易让玩家误解为充值活动。'}
-];
-const KEY='honor-of-kings-editor-v1';
+const KEY='honor-of-kings-apify-v2';
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let records=[];
-try{records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{}
+try{localStorage.removeItem('honor-of-kings-editor-v1');records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{}
 let selected=records[0]?.id, version=0;
 const category=r=>r.topicCard?'玩法与版本':r.live?'自动采样':r.real?'赛事回放':'模拟';
 function save(message){
@@ -97,30 +91,6 @@ function variants(r){
   {name:'B · 实录剪辑',seconds:36,body:teamwork?'00–04 秒｜开场：先放团战结果，字幕「这波配合，开打前就能看出来」。\n04–27 秒｜实录：回到开团前，从同一段对局中标出集合信号、队友靠拢和跟进输出三个瞬间。\n27–36 秒｜结尾：并排回放进场与跟进画面，字幕「你最信任哪位开黑队友？」\n#王者荣耀 #峡谷团战复盘':'00–04 秒｜开场：字幕「只听声音，你能认出这场团战吗？」\n04–27 秒｜实录：先播放原声，再按声音出现顺序切回对局，展示技能命中和队友跟进的对应画面。\n27–36 秒｜结尾：保留最后一段音效，邀请观众在评论区猜对应画面。\n#王者荣耀 #听声猜团战'}
  ].map(v=>({...v,status:'待审',history:[]}));
 }
-$('import-real').addEventListener('click',()=>{
- const id='kpl-2026-11-08';
- if(!records.some(r=>r.id===id))records.unshift({
-  id,real:true,title:'2026 KPL 年度总决赛｜北京WB 对 广州TTG',heat:793000,
-  published:'2026-11-08 18:49:15',ingested:'2026-11-20（网页查证）',trust:'存疑',
-  evidence:[['B 站赛事官方账号','原片显示对阵双方及发布时间。']],
-  reason:'赛事原片可追溯。请核对脚本拟引用的事实和片段，播放量来自页面快照。',
-  score:96,match:'赛事适合切入团战沟通与跟进，用自录对局演示。',
-  confirmed:false,scripts:[]
- });
- $('filter').value='全部';$('kind').value='全部';selected=id;version=0;save('已载入赛事快照，请查看原片并复核');
-});
-$('collect').addEventListener('click',()=>{
- const time=new Date();
- const stamp=d=>d.toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'});
- let count=0;
- for(const s of samples){
-  if(records.some(r=>r.id===s.id))continue;
-  records.push({...s,published:stamp(new Date(time-s.minutes*60000)),ingested:stamp(time),trust:s.id==='bell'?'存疑':s.id==='gift'?'不实':'可信',confirmed:false,scripts:[]});
-  count++;
- }
- $('filter').value='全部';$('kind').value='全部';
- save(count?'已采集 '+count+' 条模拟热点':'热点已去重，审核进度已保留');
-});
 $('filter').addEventListener('change',render);
 $('kind').addEventListener('change',render);
 $('list').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(button){selected=button.dataset.id;version=0;render()}});
@@ -185,7 +155,7 @@ async function syncLive(trigger=false){
  button.disabled=true;
  try{
   if(trigger&&localService)await fetchData('/api/collect',{method:'POST'});
-  const {items,run,interval,trends=[]}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
+  const {items,run,trends=[]}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
   renderTrends(trends);
   let added=0;
   for(const item of items){
@@ -200,9 +170,9 @@ async function syncLive(trigger=false){
     evidence:[[item.publisher,item.source+' · 最近采样 '+stamp(item.last_seen)]]});
   }
   if(trigger&&added){$('filter').value='全部';$('kind').value='全部';selected=records.find(row=>row.live)?.id;version=0}
-  const counts=run?Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '):'等待首次采样';
+  const counts=run?Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '):'队列已清空，等待 Apify 采样';
   const errors=run?Object.entries(run.errors).map(([name,error])=>name+'：'+error).join(' · '):'';
-  $('sources').textContent=[counts,errors,'间隔 '+(interval/60)+' 分钟'].filter(Boolean).join('；');
+  $('sources').textContent=[counts,errors].filter(Boolean).join('；');
   if(trigger||(added&&!records.find(r=>r.id===selected)?.scripts.length))save(added?'同步了 '+added+' 条新记录':'同步完成，采样详情见上方');
   else if(!document.activeElement?.matches('input,textarea')&&!records.find(r=>r.id===selected)?.scripts.length)render();
  }catch(error){$('sources').textContent='读取采样服务失败：'+error.message}
@@ -218,23 +188,10 @@ async function fetchData(url,options){
 if(location.protocol!=='file:'){
  $('live').hidden=false;
  if(!localService)$('live').textContent='刷新采样快照';
- fetchData('./topics.json').then(topics=>{
-  const newRecords=[];
-  for(const topic of topics){
-   const existing=records.find(row=>row.id===topic.id);
-   const fields={title:topic.title,topicCard:topic,real:true,published:topic.date,ingested:'2026-11-21（人工查证）',
-    evidence:[[topic.publisher,topic.summary]],reason:'请核对官方来源与适用版本，再确认选题。'};
-   if(existing)Object.assign(existing,fields);
-   else newRecords.push({...fields,id:topic.id,trust:'存疑',score:94,match:topic.angle,confirmed:false,scripts:[]});
-  }
-  records.unshift(...newRecords);
-  if(newRecords.length&&!selected)selected=topics[0]?.id;
-  save('已载入 '+topics.length+' 条官方来源玩法与版本选题');
- }).catch(error=>{$('notice').textContent='玩法专题载入失败：'+error.message});
  $('live').addEventListener('click',()=>syncLive(true));
  syncLive();setInterval(syncLive,20000);
 }else{
- $('sources').textContent='启动采样服务可获取新热点。此文件可离线导入已查证样本。';
+ $('sources').textContent='请通过已部署站点或本地采样服务打开。';
 }
 render();
 </script></body></html>
