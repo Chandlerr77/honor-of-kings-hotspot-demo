@@ -164,7 +164,7 @@ def snapshot():
             items.append(item)
     rules = dict(banned_words=games.RULES["banned_words"], threshold=pipeline.THRESHOLD,
                  min_seconds=pipeline.PLATFORM["min_seconds"], max_seconds=pipeline.PLATFORM["max_seconds"],
-                 reject_reasons=pipeline.REJECT_REASONS)
+                 reject_reasons=pipeline.REJECT_REASONS, ai_since=pipeline.AI_SINCE)
     return dict(items=items, trends=trends.group_topics(items), run=json.loads(run[0]) if run else None,
                 rules=rules, games=games.summary())
 

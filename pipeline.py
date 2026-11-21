@@ -17,6 +17,12 @@ import llm
 PLATFORM = games.PLATFORM
 VERSION = "v3"          # bump when prompts change so cached analyses are redone
 THRESHOLD = 70
+AI_SINCE = games.RULES.get("ai_since", "")   # hotspots first seen before this are not sent to the model
+
+
+def backlog(item):
+    """True for hotspots collected before AI_SINCE: left for people, never analyzed automatically."""
+    return bool(AI_SINCE) and str(item.get("first_seen") or "") < AI_SINCE
 MAX_ITEMS = int(os.getenv("HOTSPOT_AI_MAX_ITEMS", "10"))
 TRUST = ("可信", "存疑", "不实")
 CLAIM = ("已证实", "未证实", "与来源矛盾")
@@ -293,7 +299,8 @@ def run(db, items):
     done = {row[0] for row in db.execute("SELECT id FROM analyses WHERE version=?", (VERSION,))}
     # breakout topics first (most time-sensitive), then high-engagement posts
     order = {"trend": 0, "post": 1}
-    queue = sorted((i for i in items if i["id"] not in done),
+    skipped = sum(1 for i in items if i["id"] not in done and backlog(i))
+    queue = sorted((i for i in items if i["id"] not in done and not backlog(i)),
                    key=lambda i: (order.get(i.get("kind"), 1), -(i.get("heat") or i.get("likes") or 0)))
     todo = queue[:MAX_ITEMS]
     analyzed, errors = 0, {}
@@ -310,7 +317,7 @@ def run(db, items):
         db.commit()
         analyzed += 1
     return {"model": model.name, "analyzed": analyzed, "pending": len(queue) - len(todo),
-            "errors": errors}
+            "skipped": skipped, "errors": errors}
 
 
 def regenerate(item, analysis, trust_note, score, reason):

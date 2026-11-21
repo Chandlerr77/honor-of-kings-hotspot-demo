@@ -93,7 +93,7 @@ function renderStatus(){
  if(mode==='static')parts.push('每小时更新游戏圈热点，每天 10:17 加跑 Apify（北京时间）');
  if(run?.sampled)parts.push('最近采样 '+stamp(run.sampled));
  if(run?.counts)parts.push(Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '));
- if(run?.ai)parts.push(run.ai.model?'AI '+run.ai.model+' 本轮分析 '+run.ai.analyzed+' 条'+(run.ai.pending?'，排队 '+run.ai.pending+' 条':'')+(Object.keys(run.ai.errors||{}).length?'，失败 '+Object.keys(run.ai.errors).length+' 条':''):'AI：'+run.ai.error);
+ if(run?.ai)parts.push(run.ai.model?'AI '+run.ai.model+' 本轮分析 '+run.ai.analyzed+' 条'+(run.ai.pending?'，排队 '+run.ai.pending+' 条':'')+(run.ai.skipped?'，积压未分析 '+run.ai.skipped+' 条':'')+(Object.keys(run.ai.errors||{}).length?'，失败 '+Object.keys(run.ai.errors).length+' 条':''):'AI：'+run.ai.error);
  if(run?.errors&&Object.keys(run.errors).length)parts.push('来源异常：'+Object.entries(run.errors).map(([n,e])=>n+' '+e).join('；'));
  $('sources').textContent=parts.join('；');
 }
@@ -125,7 +125,7 @@ function verifyBox(x){
   if(v.sources.length)html+='<p>参考来源 · '+v.sources.map(s=>link(s.url,s.title||s.url)).join(' · ')+'</p>';
   if(v.rule_notes?.length)html+='<p class="muted">程序规则 · '+esc(v.rule_notes.join('；'))+'</p>';
   html+='<small>'+esc(x.ai.model)+(v.searched?' · 已联网检索':'')+' · '+esc(stamp(x.ai.analyzed))+'</small>';
- }else html+='<p class="muted">尚未经过 AI 核验（未配置模型或排队中），请打开原始来源人工核对。</p>';
+ }else html+='<p class="muted">'+(RULES.ai_since&&String(x.item.first_seen||'')<RULES.ai_since?'积压热点：早于 AI 分析起始时间，不再自动分析，请打开原始来源人工核对。':'尚未经过 AI 核验（未配置模型或排队中），请打开原始来源人工核对。')+'</p>';
  if(h.review)html+='<p class="section">人工复核 · <span class="pill'+trustClass(h.review.trust)+'">'+esc(h.review.trust)+'</span> '+esc(h.review.note)+'<br><small>'+esc(h.review.by)+' · '+esc(stamp(h.review.at))+'</small></p>';
  const open=x.trust==='存疑'&&!h.review;
  html+='<details'+(open?' open':'')+'><summary>'+(open?'人工复核（必填）':'人工改判')+'</summary>'+

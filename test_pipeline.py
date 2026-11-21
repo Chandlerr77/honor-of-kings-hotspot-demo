@@ -150,6 +150,21 @@ class StorageTests(unittest.TestCase):
         self.assertEqual(item["ai"]["verify"]["trust"], "可信")
         self.assertEqual(serve.snapshot()["rules"]["threshold"], 70)
 
+    def test_backlog_before_ai_since_is_skipped(self):
+        serve.init_db()
+        old = {**ITEM, "id": "dy-old", "first_seen": "2026-11-20T00:00:00+00:00"}
+        new = {**ITEM, "id": "dy-new", "first_seen": "2099-01-01T00:00:00+00:00"}
+        model = FakeModel({"trust": "可信", "reason": "", "claims": [], "sources": []})
+        original, since = llm.provider, pipeline.AI_SINCE
+        llm.provider, pipeline.AI_SINCE = (lambda: model), "2026-11-21T08:01:00+00:00"
+        try:
+            with serve.connect() as db:
+                status = pipeline.run(db, [old, new])
+        finally:
+            llm.provider, pipeline.AI_SINCE = original, since
+        self.assertEqual((status["analyzed"], status["skipped"], status["pending"]), (1, 1, 0))
+        self.assertTrue(pipeline.backlog({"first_seen": "2026-11-21T07:48:01+00:00"}))
+
     def test_no_key_is_reported_not_raised(self):
         serve.init_db()
         with serve.connect() as db:
