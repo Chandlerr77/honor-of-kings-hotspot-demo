@@ -25,7 +25,7 @@ python serve.py
 
 | 变量 | 默认 | 说明 |
 | --- | --- | --- |
-| `HOTSPOT_INTERVAL_SECONDS` | 1800 | 免费来源（微博热搜、抖音热榜、B站热门中的游戏条目）的采样间隔，0 表示只在启动时采一次 |
+| `HOTSPOT_INTERVAL_SECONDS` | 1800 | 免费来源（微博热搜、抖音热榜、B站热门中各款游戏的条目）的采样间隔，0 表示只在启动时采一次 |
 | `HOTSPOT_APIFY_INTERVAL_SECONDS` | 0 | Apify 搜索（计费）的间隔，0 表示只在点击「加跑 Apify 搜索」时运行 |
 | `HOTSPOT_AI_MAX_ITEMS` | 10 | 每轮最多送 AI 分析的热点数 |
 | `HOTSPOT_PORT` | 8765 | 端口 |

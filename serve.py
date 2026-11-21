@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import game_sources
+import games
 import pipeline
 import trends
 
@@ -90,7 +91,7 @@ def article_url(item_id):
 def store(db, item, now):
     existing = db.execute("SELECT data FROM videos WHERE id=?", (item["id"],)).fetchone()
     old = json.loads(existing[0]) if existing else {}
-    for field in ("likes", "comments", "shares", "saves", "match_type", "tags", "text", "published"):
+    for field in ("likes", "comments", "shares", "saves", "match_type", "tags", "text", "published", "game"):
         if item.get(field) is None and old.get(field) is not None:
             item[field] = old[field]
     if item.get("kind") == "trend" and not item.get("published"):
@@ -156,15 +157,16 @@ def snapshot():
             observations = db.execute("""SELECT source,sampled,views,rank FROM observations
                 WHERE id=? ORDER BY sampled DESC LIMIT 12""", (item["id"],)).fetchall()
             item.update(first_seen=first, last_seen=last, url=item.get("url") or article_url(item["id"]),
-                        kind=item.get("kind") or "post", on_board=item.get("kind") == "trend" and last == board_time,
+                        kind=item.get("kind") or "post", game=item.get("game") or games.DEFAULT, on_board=item.get("kind") == "trend" and last == board_time,
                         ai=json.loads(analyses[item["id"]]) if item["id"] in analyses else None,
                         observations=[dict(source=source, sampled=sampled, views=views, rank=rank)
                                       for source, sampled, views, rank in observations])
             items.append(item)
-    rules = dict(banned_words=pipeline.PROFILE["banned_words"], threshold=pipeline.THRESHOLD,
+    rules = dict(banned_words=games.RULES["banned_words"], threshold=pipeline.THRESHOLD,
                  min_seconds=pipeline.PLATFORM["min_seconds"], max_seconds=pipeline.PLATFORM["max_seconds"],
                  reject_reasons=pipeline.REJECT_REASONS)
-    return dict(items=items, trends=trends.group_topics(items), run=json.loads(run[0]) if run else None, rules=rules)
+    return dict(items=items, trends=trends.group_topics(items), run=json.loads(run[0]) if run else None,
+                rules=rules, games=games.summary())
 
 
 # ---------- shared review store ----------

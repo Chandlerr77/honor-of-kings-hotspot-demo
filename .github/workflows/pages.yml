@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 2 * * *'  # 10:17 Asia/Shanghai: game sources + Apify search (billed)
+    - cron: '17 2 */2 * *'  # 10:17 Asia/Shanghai every 2 days: game sources + Apify search for all games (billed)
     - cron: '47 * * * *'  # hourly: free game sources only
   workflow_dispatch:
     inputs:
@@ -37,8 +37,8 @@ jobs:
         run: pip install -r requirements.txt
       - name: Build Pages files
         env:
-          HOTSPOT_SOURCES: ${{ (github.event.schedule == '17 2 * * *' || inputs.apify_trends) && 'game,apify' || ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'game' || '') }}
-          APIFY_TOKEN: ${{ (github.event.schedule == '17 2 * * *' || inputs.apify_trends) && secrets.APIFY_TOKEN || '' }}
+          HOTSPOT_SOURCES: ${{ (github.event.schedule == '17 2 */2 * *' || inputs.apify_trends) && 'game,apify' || ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'game' || '') }}
+          APIFY_TOKEN: ${{ (github.event.schedule == '17 2 */2 * *' || inputs.apify_trends) && secrets.APIFY_TOKEN || '' }}
           # AI 核验/匹配/生成：配置下面任意一个 Secret 即可，未配置的为空，不影响运行
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}

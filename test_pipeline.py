@@ -15,6 +15,7 @@ for key in ("ANTHROPIC_API_KEY", "LLM_API_KEY", "GEMINI_API_KEY", "DEEPSEEK_API_
     os.environ.pop(key, None)
 
 import game_sources
+import games
 import llm
 import pipeline
 import serve
@@ -22,7 +23,7 @@ import trends
 
 ITEM = {"id": "dy-7709413956435570146", "title": "共鸣之战最后一天，小猫咪冲啊", "text": "", "tags": ["王者荣耀", "共鸣之战"],
         "publisher": "鬼岛", "published": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(), "views": 3956761, "likes": 133316,
-        "url": "https://www.douyin.com/video/7709413956435570146"}
+        "url": "https://www.douyin.com/video/7709413956435570146", "game": "wzry"}
 
 
 def segment(start, end, part, voice="来看这波操作"):
@@ -44,6 +45,7 @@ class FakeModel:
                         "scripts": {"scripts": scripts if scripts is not None else [GOOD, {**GOOD, "name": "B"}]}}
         self.calls = []
         self.prompts = []
+        self.systems = []
 
     def research(self, system, prompt, max_searches=4):
         self.calls.append("research")
@@ -53,6 +55,7 @@ class FakeModel:
         key = next(k for k in ("trust", "score", "scripts") if k in schema["properties"])
         self.calls.append(key)
         self.prompts.append(prompt)
+        self.systems.append(system)
         return self.answers[key]
 
 
@@ -373,6 +376,56 @@ class DeepSeekTests(unittest.TestCase):
         finally:
             os.environ.pop("DEEPSEEK_API_KEY")
         self.assertEqual((model.name, model.web_search), ("DeepSeek · deepseek-flash", True))
+
+
+
+class MultiGameTests(unittest.TestCase):
+    YS = {"id": "xhs-" + "b" * 24, "game": "ys", "title": "原神新版本角色PV", "text": "", "tags": ["原神"],
+          "url": "https://www.xiaohongshu.com/explore/x", "published": datetime.now(timezone.utc).isoformat()}
+
+    def test_profiles_load_and_detect_games(self):
+        self.assertEqual(list(games.GAMES), ["wzry", "hpjy", "ys", "jcc"])
+        self.assertEqual(games.detect("KPL总决赛"), "wzry")
+        self.assertEqual(games.detect("原神 4.0 版本 PV"), "ys")
+        self.assertEqual(games.detect("云顶之弈新赛季"), "jcc")
+        self.assertIsNone(games.detect("金价大跌"))
+        self.assertEqual(games.by_query()["和平精英"], "hpjy")
+
+    def test_prompts_and_rules_follow_the_items_game(self):
+        model = FakeModel({"trust": "可信", "reason": "", "claims": [], "sources": []},
+                          scripts=[{**GOOD, "tags": ["原神", "提瓦特"]}, {**GOOD, "name": "B", "tags": ["原神", "游戏日常"]}])
+        result = pipeline.analyze(model, self.YS, [self.YS, ITEM])
+        self.assertTrue(all("《原神》" in system for system in model.systems))
+        self.assertNotIn("王者荣耀", model.prompts[0])                  # other games are not cross-checked
+        self.assertEqual([s["checks"] for s in result["scripts"]], [[], []])
+        self.assertTrue(any("原神" in e for e in pipeline.script_errors(GOOD, games.get("ys"))))  # #王者荣耀 is wrong here
+
+    def test_game_specific_taboos_reach_the_prompt(self):
+        self.assertIn("抽卡概率", pipeline.match_system(games.get("ys")))
+        self.assertNotIn("抽卡概率", pipeline.match_system(games.get("wzry")))
+
+    def test_apify_results_are_tagged_by_their_search_query(self):
+        recent = datetime.now(timezone.utc).isoformat()
+        rows = [{"id": "a" * 24, "input": "原神", "published_at": recent, "title": "提瓦特风景摄影", "metrics": {}},
+                {"id": "c" * 24, "input": "金铲铲之战", "published_at": recent, "title": "今天吃什么", "metrics": {}}]
+        original = trends.request_rows
+        trends.request_rows = lambda platform, payload: rows
+        try:
+            found = {item["id"]: item["game"] for item in trends.collect("xiaohongshu")}
+        finally:
+            trends.request_rows = original
+        self.assertEqual(found, {"xhs-" + "a" * 24: "ys"})                # second row names no 金铲铲 keyword
+
+    def test_boards_tag_each_entry_with_its_game(self):
+        weibo = {"ok": 1, "data": {"band_list": [{"word": "和平精英新地图", "num": 9}, {"word": "原神音乐会", "num": 8}]}}
+        self.assertEqual([i["game"] for i in game_sources.weibo(weibo)], ["hpjy", "ys"])
+
+    def test_topics_are_grouped_per_game(self):
+        recent = datetime.now(timezone.utc).isoformat()
+        posts = [{"id": f"xhs-{n}", "kind": "post", "game": g, "title": "x", "tags": ["风景摄影"], "published": recent}
+                 for n, g in enumerate(["ys", "ys", "jcc", "jcc"])]
+        titles = sorted(t["title"] for t in trends.group_topics(posts))
+        self.assertEqual(titles, ["原神｜风景摄影", "金铲铲之战｜风景摄影"])
 
 
 if __name__ == "__main__":

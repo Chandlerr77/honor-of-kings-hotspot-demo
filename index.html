@@ -6,12 +6,13 @@
 @media(max-width:760px){.layout,.summary,.grid2{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}</style></head><body>
 <header><div class="brand"><b>✦</b>游戏营销工作台</div>
 <div class="who"><input class="field" id="me" placeholder="你的名字" aria-label="操作人"><input class="field" id="token" type="password" placeholder="团队口令" aria-label="团队口令" hidden><span class="pill dim" id="mode">连接中</span></div></header>
-<main><section class="hero"><h1>热点编辑台</h1><p>筛选《王者荣耀》游戏圈热点，制作 30–60 秒抖音竖屏脚本。</p>
+<main><section class="hero"><h1>热点编辑台</h1><p>按游戏跟踪游戏圈热点，为每款游戏制作 30–60 秒抖音竖屏脚本。</p>
 <div class="actions"><button class="primary" id="collect" hidden>采集游戏圈热点</button><button id="apify" hidden>加跑 Apify 搜索（计费）</button><button id="refresh" hidden>刷新快照</button></div>
 <small id="sources" role="status"></small>
 <div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与爆点拆解</span><span><b>04</b>生成</span><span><b>05</b>人工审核</span></div></section>
 <section class="panel trend-panel" id="trends" hidden><h2>近 7 天讨论话题</h2><p class="muted">至少两条相关作品才归为一组，优先展示多个平台都有讨论的话题。</p><div class="trend-grid"></div></section>
 <p id="notice" role="status"></p>
+<div class="tabs" id="games" role="tablist" aria-label="游戏"></div>
 <div class="layout"><aside class="panel"><h2>热点队列</h2>
 <label for="filter">核验状态</label><select id="filter" class="field"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select>
 <label for="kind">来源</label><select id="kind" class="field"><option value="">全部</option><option value="trend">上榜词条</option><option value="post">游戏圈作品</option></select>
@@ -30,7 +31,7 @@ const link=(url,label)=>'<a href="'+esc(url)+'" target="_blank" rel="noopener no
 const lsGet=(k,d)=>{try{return localStorage.getItem(k)??d}catch{return d}};
 const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
 let RULES={banned_words:['赌博','包赢','全服免费','伤亡'],threshold:70,min_seconds:30,max_seconds:60,reject_reasons:['不符合游戏设定','品牌或合规风险','热点已过时','事实不准确','创意或质量不足','素材无法实现']};
-let mode='static', items=[], human={}, eventsFor={}, selected=null, tab=0, run=null, dirty=false;  // dirty: unsaved typing in the detail panel
+let mode='static', items=[], human={}, eventsFor={}, selected=null, tab=0, run=null, dirty=false, GAMES=[], gameFilter='';  // dirty: unsaved typing in the detail panel
 
 // ---------- data access ----------
 async function api(path,options={}){
@@ -50,9 +51,9 @@ function loadLocal(){try{human=JSON.parse(lsGet(LOCAL_KEY,'{}'))||{}}catch{human
 async function refresh(){
  try{
   const snap=mode==='server'?(await api('/api/hotspots')).data:await (await fetch('./hotspots.json',{cache:'no-store'})).json();
-  items=snap.items||[];run=snap.run;if(snap.rules)RULES={...RULES,...snap.rules};
+  items=snap.items||[];run=snap.run;if(snap.rules)RULES={...RULES,...snap.rules};if(snap.games)GAMES=snap.games;
   if(mode==='server'){const r=await api('/api/reviews');if(r.ok)human=r.data.reviews;eventsFor={}}
-  renderTopics(snap.trends||[]);renderStatus();
+  topics=snap.trends||[];renderGames();renderTopics();renderStatus();
   dirty?renderList():render();
  }catch(error){$('sources').textContent='读取数据失败：'+error.message}
 }
@@ -98,12 +99,12 @@ function renderStatus(){
 }
 function renderList(){
  const all=items.map(view);
- const visible=all.filter(x=>($('filter').value==='全部'||x.trust===$('filter').value)&&(!$('kind').value||x.item.kind===$('kind').value)&&(!$('stage').value||x.stage===$('stage').value))
+ const visible=all.filter(x=>(!gameFilter||x.item.game===gameFilter)&&($('filter').value==='全部'||x.trust===$('filter').value)&&(!$('kind').value||x.item.kind===$('kind').value)&&(!$('stage').value||x.stage===$('stage').value))
   .sort((a,b)=>STAGES.indexOf(a.stage)-STAGES.indexOf(b.stage)||String(b.item.published||'').localeCompare(String(a.item.published||'')));
  if(!visible.some(x=>x.item.id===selected)){selected=visible[0]?.item.id??null;tab=0}
  lsSet('hok-selected',selected||'');
  $('list').innerHTML=visible.map(x=>'<button class="item" data-id="'+esc(x.item.id)+'" aria-pressed="'+(x.item.id===selected)+'"><strong>'+esc(x.item.title)+'</strong><small>'+
-  esc(KIND[x.item.kind]||'')+' · '+esc(x.item.platform||x.item.source)+(x.item.on_board?' · 在榜':'')+'</small><small><span class="pill'+trustClass(x.trust)+'">'+x.trust+'</span> '+esc(x.stage)+(x.score!=null?' · '+x.score+' 分':'')+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
+  esc(gameName(x.item.game))+' · '+esc(KIND[x.item.kind]||'')+' · '+esc(x.item.platform||x.item.source)+(x.item.on_board?' · 在榜':'')+'</small><small><span class="pill'+trustClass(x.trust)+'">'+x.trust+'</span> '+esc(x.stage)+(x.score!=null?' · '+x.score+' 分':'')+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
 }
 const trustClass=t=>t==='可信'?'':t==='存疑'?' warn':' bad';
 function metrics(item){
@@ -169,7 +170,7 @@ function render(){
  if(!item){$('detail').innerHTML='<h2>开始选题</h2><p class="muted">采集到热点后，即可查看核验证据、确认选题并生成脚本。</p>';return}
  const x=view(item);
  $('detail').innerHTML=
- '<div class="head"><span class="pill'+trustClass(x.trust)+'">'+x.trust+(x.h.review?' · 人工':x.v?' · AI 初判':'')+'</span><span class="pill dim">'+esc(KIND[item.kind]||'')+'</span><span class="pill dim">'+esc(x.stage)+'</span>'+(item.on_board?'<span class="pill warn">当前在榜</span>':'')+'</div>'+
+ '<div class="head"><span class="pill'+trustClass(x.trust)+'">'+x.trust+(x.h.review?' · 人工':x.v?' · AI 初判':'')+'</span><span class="pill">'+esc(gameName(item.game))+'</span><span class="pill dim">'+esc(KIND[item.kind]||'')+'</span><span class="pill dim">'+esc(x.stage)+'</span>'+(item.on_board?'<span class="pill warn">当前在榜</span>':'')+'</div>'+
  '<h2>'+esc(item.title)+'</h2><p>'+link(item.url,'打开原始来源')+' · '+esc(item.publisher||item.source)+'</p>'+
  '<small>发布 '+esc(stamp(item.published))+' · 首次采集 '+esc(stamp(item.first_seen))+' · 最近采集 '+esc(stamp(item.last_seen))+'</small><p>'+esc(metrics(item))+'</p>'+
  (item.text?'<details><summary>正文摘录</summary><p>'+esc(item.text)+'</p></details>':'')+
@@ -188,9 +189,16 @@ async function loadEvents(id){
  if(selected!==id||!$('log'))return;
  $('log').innerHTML=eventsFor[id].map(e=>'<li><small>'+esc(stamp(e.at))+'</small> '+esc(e.actor)+' · '+esc(e.action)+(e.detail?' · '+esc(e.detail):'')+'</li>').join('')||'<li class="muted">暂无操作</li>';
 }
-function renderTopics(topics){
- const root=$('trends');root.hidden=!topics.length;
- root.querySelector('.trend-grid').innerHTML=topics.map(t=>'<div class="box"><h3>'+esc(t.title)+'</h3><small>'+t.count+' 条样本 · '+t.platforms.length+' 个平台</small>'+
+let topics=[];
+const gameName=id=>GAMES.find(g=>g.id===id)?.name||id||'';
+function renderGames(){
+ const counts={};items.forEach(i=>{counts[i.game]=(counts[i.game]||0)+1});
+ $('games').innerHTML=[{id:'',name:'全部游戏'},...GAMES].map(g=>'<button role="tab" data-game="'+esc(g.id)+'" aria-pressed="'+(g.id===gameFilter)+'">'+esc(g.name)+' '+(g.id?counts[g.id]||0:items.length)+'</button>').join('');
+}
+function renderTopics(){
+ const shown=topics.filter(t=>!gameFilter||t.game===gameFilter);
+ const root=$('trends');root.hidden=!shown.length;
+ root.querySelector('.trend-grid').innerHTML=shown.map(t=>'<div class="box"><h3>'+esc(t.title)+'</h3><small>'+t.count+' 条样本 · '+t.platforms.length+' 个平台</small>'+
   t.platforms.map(p=>'<p class="trend-platform"><strong>'+esc(p.name)+'</strong> · '+p.count+' 条</p><ul>'+p.examples.map(e=>'<li><button class="trend-post" data-post="'+esc(e.id)+'">'+esc(e.title)+'</button></li>').join('')+'</ul>').join('')+'</div>').join('');
 }
 
@@ -212,8 +220,8 @@ function templates(x){
  const b=x.m?.breakdown, borrow=b?.borrow?.[0];
  return ['热点切入','玩法结合'].map((name,i)=>({name,angle:'',borrowed:borrow||'',seconds:i?36:42,ai:false,status:'待审',history:[],
   body:'00–05 秒｜开场：'+(i?'今天用一局自录对局聊聊「'+x.item.title+'」':'最近「'+x.item.title+'」很火，你怎么看？')+
-  '\n05–'+(i?27:32)+' 秒｜实录：片头标出来源；'+(borrow?'借用「'+borrow+'」；':'')+'切入自录王者峡谷画面，展示「'+x.matchText+'」对应的情境。'+
-  '\n'+(i?27:32)+'–'+(i?36:42)+' 秒｜结尾：请观众在评论区分享自己的看法。\n#王者荣耀 #王者峡谷'}));
+  '\n05–'+(i?27:32)+' 秒｜实录：片头标出来源；'+(borrow?'借用「'+borrow+'」；':'')+'切入自录的'+gameName(x.item.game)+'游戏画面，展示「'+x.matchText+'」对应的情境。'+
+  '\n'+(i?27:32)+'–'+(i?36:42)+' 秒｜结尾：请观众在评论区分享自己的看法。\n#'+gameName(x.item.game)+' #游戏日常'}));
 }
 
 // ---------- actions ----------
@@ -243,9 +251,9 @@ async function act(action){
  }
  const s=x.scripts[tab];if(!s)return;
  if(action==='export'){
-  const text='《王者荣耀》｜'+item.title+'\n'+s.name+'｜'+s.seconds+' 秒｜终稿：'+(s.approved?.by||'')+' '+stamp(s.approved?.at)+(s.borrowed?'\n借用爆点：'+s.borrowed:'')+'\n来源：'+item.url+'\n\n'+s.body;
+  const text='《'+gameName(item.game)+'》｜'+item.title+'\n'+s.name+'｜'+s.seconds+' 秒｜终稿：'+(s.approved?.by||'')+' '+stamp(s.approved?.at)+(s.borrowed?'\n借用爆点：'+s.borrowed:'')+'\n来源：'+item.url+'\n\n'+s.body;
   const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
-  const a=document.createElement('a');a.href=url;a.download='王者荣耀-已审脚本.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
+  const a=document.createElement('a');a.href=url;a.download=gameName(item.game)+'-已审脚本.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
  }
  if(action==='reopen'){if(await commit(item.id,'reopen',s.name,d=>{d.scripts[tab].status='修改中';d.scripts[tab].approved=null}))note('已重新打开');return}
  const seconds=Number($('duration').value), body=$('script').value.trim();
@@ -265,6 +273,8 @@ async function act(action){
 
 // ---------- wiring ----------
 ['filter','kind','stage'].forEach(id=>$(id).addEventListener('change',render));
+$('games').addEventListener('click',e=>{const b=e.target.closest('[data-game]');if(!b)return;gameFilter=b.dataset.game;lsSet('hok-game',gameFilter);renderGames();renderTopics();render()});
+gameFilter=lsGet('hok-game','');
 $('list').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b){selected=b.dataset.id;tab=0;render()}});
 $('trends').addEventListener('click',e=>{const t=e.target.closest('[data-post]');if(!t)return;['filter','kind','stage'].forEach(id=>$(id).value=id==='filter'?'全部':'');selected=t.dataset.post;tab=0;render();$('detail').scrollIntoView({block:'start'})});
 $('detail').addEventListener('input',e=>{dirty=true;if(['duration','script'].includes(e.target.id))checkDraft()});

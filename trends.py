@@ -1,4 +1,4 @@
-"""Collect and summarize recent high-engagement Wangzhe posts."""
+"""Apify search for every tracked game (one run per platform), plus the queue filters and topic grouping."""
 import json
 import os
 import re
@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from urllib.request import Request, urlopen
 
-import game_sources
+import games
 import social
 from apify_pilot import ACTORS
 
@@ -20,7 +20,9 @@ THEMES = {
     "斗地主": ("斗地主",),
     "农场玩法": ("农场", "种菜"),
 }
-GENERIC = {"王者荣耀", "王者", "游戏", "手游", "搞笑", "电子竞技", "推荐", "热门", "游戏日常", "王者荣耀日常", "上热门"}
+THEMES_GAME = "wzry"   # the hand-written themes above are 王者荣耀 topics
+GENERIC = {"游戏", "手游", "搞笑", "电子竞技", "推荐", "热门", "游戏日常", "王者荣耀日常", "上热门"} | {
+    k for g in games.GAMES.values() for k in (g["game"], *g["keywords"])}
 
 def request_rows(platform, payload):
     token = os.getenv("APIFY_TOKEN")
@@ -28,7 +30,8 @@ def request_rows(platform, payload):
         raise ValueError("未配置 APIFY_TOKEN")
     actor, _ = ACTORS[platform]
     req = Request(
-        f"https://api.apify.com/v2/actors/dataxapi~{actor}/run-sync-get-dataset-items?maxTotalChargeUsd=0.05&timeout=120",
+        f"https://api.apify.com/v2/actors/dataxapi~{actor}/run-sync-get-dataset-items"
+        f"?maxTotalChargeUsd={0.05 * len(games.GAMES):.2f}&timeout=120",   # about $0.05 per game
         data=json.dumps(payload).encode(),
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
     )
@@ -40,7 +43,7 @@ def request_rows(platform, payload):
 
 def rows(platform):
     _, options = ACTORS[platform]
-    return request_rows(platform, {"searchQueries": ["王者荣耀"], "publishedWithin": "week",
+    return request_rows(platform, {"searchQueries": list(games.by_query()), "publishedWithin": "week",
                                    "sort": "popular", **options})
 
 def post_date(value):
@@ -52,6 +55,7 @@ def post_date(value):
 
 def collect(platform):
     prefix, pattern = ("dy-", r"\d{15,22}") if platform == "douyin" else ("xhs-", r"[a-f0-9]{24}")
+    by_query = games.by_query()
     for row in rows(platform):
         if not isinstance(row, dict):
             continue
@@ -62,18 +66,22 @@ def collect(platform):
         if not (published and title and re.fullmatch(pattern, post_id)):
             continue
         tags = [tag.strip().lstrip("#")[:40] for tag in row.get("hashtags") or [] if isinstance(tag, str)]
-        # the search query is already 王者荣耀; any game keyword (王者、峡谷、KPL…) confirms relevance
-        if not (game_sources.game_related(title, body, *tags)
-                or any(alias.casefold() in (title+" "+body+" "+" ".join(tags)).casefold()
+        # the result belongs to the game whose query found it; any of that game's keywords confirms relevance
+        game_id = by_query.get(str(row.get("input") or "")) or games.detect(title, body, *tags)
+        if not game_id:
+            continue
+        game = games.get(game_id)
+        if not (games.hits(game, title, body, *tags)
+                or game_id == THEMES_GAME and any(alias.casefold() in (title+" "+body+" "+" ".join(tags)).casefold()
                        for theme, aliases in THEMES.items() if theme != "S45 上分与出装" for alias in aliases)):
             continue
         stats = row.get("metrics") or {}
         media_type = row.get("type")
         if platform == "douyin" and row.get("kind") == "video":
             media_type = media_type or "video"
-        yield dict(id=prefix + post_id, kind="post", platform="抖音" if platform == "douyin" else "小红书", title=title[:180], text=body.strip()[:600], publisher=(row.get("author") or {}).get("name") or SOURCE[platform],
+        yield dict(id=prefix + post_id, kind="post", game=game_id, platform="抖音" if platform == "douyin" else "小红书", title=title[:180], text=body.strip()[:600], publisher=(row.get("author") or {}).get("name") or SOURCE[platform],
                    published=published, views=social.count(stats.get("views")), rank=None, media_type=media_type,
-                   match_type="话题 #王者荣耀" if "王者荣耀" in tags else "关键词 王者荣耀",
+                   match_type=("话题 #" if game["required_tag"] in tags else "关键词 ") + game["search_query"],
                    likes=social.count(stats.get("likes")), comments=social.count(stats.get("comments")),
                    saves=social.count(stats.get("favorites")), shares=social.count(stats.get("shares")),
                    tags=tags[:30], source=SOURCE[platform])
@@ -81,7 +89,7 @@ def collect(platform):
 MIN_VIDEO_VIEWS = 100_000
 MIN_VIDEO_LIKES = 10_000        # Douyin fallback when the play count is unavailable (free plan returns a sample)
 MIN_VIDEO_COMMENTS = 100
-BLOCKLIST = game_sources.PROFILE.get("blocklist", [])
+BLOCKLIST = games.RULES["blocklist"]
 MIN_NOTE_LIKES = 1_000
 MIN_NOTE_COMMENTS = 50
 
@@ -147,18 +155,20 @@ def scan(platform):
 def group_topics(items):
     buckets = defaultdict(dict)
     for item in items:
-        if not item["id"].startswith(("dy-", "xhs-", "BV", "av")) or not post_date(item.get("published")):
+        if item.get("kind", "post") != "post" or not post_date(item.get("published")):
             continue
+        game = item.get("game") or games.DEFAULT
         tags = item.get("tags") or []
         words = " ".join([item["title"], *tags]).casefold()
-        labels = [name for name, aliases in THEMES.items() if any(alias.casefold() in words for alias in aliases)]
+        labels = [name for name, aliases in THEMES.items()
+                  if game == THEMES_GAME and any(alias.casefold() in words for alias in aliases)]
         if not labels:
             labels = [tag for tag in tags if re.fullmatch(r"[\w·]{3,24}", tag)
                       and tag not in GENERIC and not tag.startswith("抖音")]
         for label in set(labels):
-            buckets[label][item["id"]] = item
+            buckets[(game, label)][item["id"]] = item
     result = []
-    for label, posts in buckets.items():
+    for (game, label), posts in buckets.items():
         if len(posts) < 2:
             continue
         platforms = defaultdict(list)
@@ -170,5 +180,6 @@ def group_topics(items):
             entries.sort(key=lambda item: (item.get("likes") or 0, item.get("comments") or 0,
                                            item.get("views") or 0), reverse=True)
             summaries.append({"name": name, "count": len(entries), "examples": entries[:2]})
-        result.append({"title": label, "count": len(posts), "platforms": summaries})
+        result.append({"title": games.get(game)["game"] + "｜" + label, "game": game,
+                       "count": len(posts), "platforms": summaries})
     return sorted(result, key=lambda topic: (-len(topic["platforms"]), -topic["count"], topic["title"]))[:8]

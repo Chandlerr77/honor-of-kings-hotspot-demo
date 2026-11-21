@@ -10,14 +10,12 @@ import json
 import os
 import re
 from datetime import datetime, timezone
-from pathlib import Path
 
+import games
 import llm
 
-ROOT = Path(__file__).resolve().parent
-PROFILE = json.loads((ROOT / "game_profile.json").read_text(encoding="utf-8"))
-PLATFORM = PROFILE["platform"]
-VERSION = "v2"          # bump when prompts change so cached analyses are redone
+PLATFORM = games.PLATFORM
+VERSION = "v3"          # bump when prompts change so cached analyses are redone
 THRESHOLD = 70
 MAX_ITEMS = int(os.getenv("HOTSPOT_AI_MAX_ITEMS", "10"))
 TRUST = ("可信", "存疑", "不实")
@@ -78,6 +76,7 @@ def describe(item):
     if item.get("rank"):
         metrics["榜单排名"] = item["rank"]
     return json.dumps({
+        "游戏": games.get(item.get("game"))["game"],
         "类型": KIND.get(item.get("kind"), KIND["post"]),
         "平台": platform_name(item), "链接": item.get("url"), "作者": item.get("publisher"),
         "发布时间": item.get("published"), "互动数据": metrics,
@@ -87,26 +86,30 @@ def describe(item):
 
 # ---------- 1. 真实性核验 ----------
 
-VERIFY_SYSTEM = f"""你是《{PROFILE['game']}》营销团队的热点核验员。热点必须真实、及时、查得到来源。
+def verify_system(game):
+    return f"""你是《{game['game']}》营销团队的热点核验员。热点必须真实、及时、查得到来源。
 程序已经确认：这条作品有原始链接、发布于近 7 天、平台返回的互动数据达到门槛。你要判断的是它所依赖的事实是否可靠。
 
 步骤：
 0. 用一句话写清这个热点在说什么事（summary）。如果是热榜词条，词条在榜已由平台确认，你要先查清它指的是什么事件。
-1. 列出作品里会被营销内容引用的事实性说法：版本更新、新英雄或皮肤、活动、赛事结果、官方表态、具体数据等。
+1. 列出作品里会被营销内容引用的事实性说法：版本更新、新角色或皮肤、活动、赛事结果、官方表态、具体数据等。
    纯玩家创作、搞笑、情绪表达、玩梗不属于事实性说法，可以没有。
 2. 逐条找官方或权威来源核对。只认你实际查到的页面；查不到就是“未证实”，不要凭记忆补链接。
 3. 结论：可信＝没有事实性说法，或全部已证实；存疑＝有说法未证实、属于爆料或传言；不实＝有说法与官方或权威来源矛盾。"""
 
 
 def verify(model, item, corpus):
-    others = [f"- [{platform_name(o)}] {o['title']}" for o in corpus if o["id"] != item["id"]][:30]
+    game = games.get(item.get("game"))
+    system = verify_system(game)
+    others = [f"- [{platform_name(o)}] {o['title']}" for o in corpus
+              if o["id"] != item["id"] and o.get("game") == item.get("game")][:30]
     prompt = (f"待核验作品：\n{describe(item)}\n\n同批采到的其他作品（可用于交叉比对是否多平台都在讨论）：\n"
               + ("\n".join(others) or "（无）"))
     if model.web_search:
-        notes = model.research(VERIFY_SYSTEM, prompt + "\n\n请联网核对后写出核验笔记，每条说法附上实际查到的来源链接。")
-        result = model.json(VERIFY_SYSTEM, f"{prompt}\n\n核验笔记：\n{notes}\n\n把核验笔记整理成结论。", VERIFY_SCHEMA)
+        notes = model.research(system, prompt + "\n\n请联网核对后写出核验笔记，每条说法附上实际查到的来源链接。")
+        result = model.json(system, f"{prompt}\n\n核验笔记：\n{notes}\n\n把核验笔记整理成结论。", VERIFY_SCHEMA)
     else:
-        result = model.json(VERIFY_SYSTEM + "\n本次无法联网，所有事实性说法只能标“未证实”。", prompt, VERIFY_SCHEMA)
+        result = model.json(system + "\n本次无法联网，所有事实性说法只能标“未证实”。", prompt, VERIFY_SCHEMA)
     return verify_rules(result, model.web_search)
 
 
@@ -141,9 +144,12 @@ def verify_rules(result, searched):
 
 # ---------- 2. 游戏匹配打分 ----------
 
-MATCH_SYSTEM = f"""你是《{PROFILE['game']}》的营销策划，判断一条热点是否值得这款游戏在{PLATFORM['name']}上跟进。
+def match_system(game):
+    setting = {k: game[k] for k in ("summary", "world", "audience", "tone", "good_fit")}
+    setting["taboos"] = games.taboos(game)
+    return f"""你是《{game['game']}》的营销策划，判断一条热点是否值得这款游戏在{PLATFORM['name']}上跟进。
 游戏设定与营销边界：
-{json.dumps({k: PROFILE[k] for k in ('summary', 'world', 'audience', 'tone', 'good_fit', 'taboos')}, ensure_ascii=False, indent=1)}
+{json.dumps(setting, ensure_ascii=False, indent=1)}
 
 打分 0–100：受众重合度、与游戏元素的结合是否自然、热度与时效、品牌风险。{THRESHOLD} 分以上才值得做。
 触碰营销边界的热点不超过 40 分，并在 risks 写明。angle 写一句可执行的切入角度。
@@ -157,7 +163,7 @@ MATCH_SYSTEM = f"""你是《{PROFILE['game']}》的营销策划，判断一条�
 def match(model, item, verdict):
     prompt = (f"热点：\n{describe(item)}\n\n这是什么事：{verdict.get('summary') or '见上'}\n"
               f"核验结论：{verdict['trust']}。{verdict['reason']}")
-    result = model.json(MATCH_SYSTEM, prompt, MATCH_SCHEMA)
+    result = model.json(match_system(games.get(item.get("game"))), prompt, MATCH_SCHEMA)
     breakdown = result.get("breakdown") or {}
     try:
         score = max(0, min(100, int(result.get("score", 0))))
@@ -174,20 +180,22 @@ def match(model, item, verdict):
 
 # ---------- 3. 脚本生成 + 规则检查 ----------
 
-SCRIPT_SYSTEM = f"""你是《{PROFILE['game']}》的短视频编导，为{PLATFORM['name']} {PLATFORM['format']}写 {PLATFORM['min_seconds']}–{PLATFORM['max_seconds']} 秒脚本。
-游戏设定：{PROFILE['summary']} {PROFILE['world']}
-语气：{PROFILE['tone']}
+def script_system(game):
+    return f"""你是《{game['game']}》的短视频编导，为{PLATFORM['name']} {PLATFORM['format']}写 {PLATFORM['min_seconds']}–{PLATFORM['max_seconds']} 秒脚本。
+游戏设定：{game['summary']} {game['world']}
+语气：{game['tone']}
 平台要求：{PLATFORM['notes']}
 硬性规则：
 - 写 2 版，切入角度不同；每版都要借用至少一个“可借用元素”，在 borrowed 写明借了什么、怎么用。
 - 分段从 0 秒开始首尾相接，最后一段的 end 等于 seconds；第一段为“开场”且不超过 {PLATFORM['hook_seconds']} 秒，中间“实录”，最后“结尾”。
 - 口播每秒不超过 {PLATFORM['max_chars_per_second']} 个字。
-- tags {PLATFORM['min_tags']}–{PLATFORM['max_tags']} 个，不带 #，必须包含“{PLATFORM['required_tag']}”。
-- 不得出现这些词：{'、'.join(PROFILE['banned_words'])}；不得触碰：{'；'.join(PROFILE['taboos'])}。
+- tags {PLATFORM['min_tags']}–{PLATFORM['max_tags']} 个，不带 #，必须包含“{game['required_tag']}”。
+- 不得出现这些词：{'、'.join(games.banned_words(game))}；不得触碰：{'；'.join(games.taboos(game))}。
 - 只引用核验中已证实的事实；未证实的说法不要写进口播。画面用自录对局或官方公开素材，并写清楚拍什么。"""
 
 
-def script_errors(script):
+def script_errors(script, game=None):
+    game = game or games.get(None)
     errors = []
     seconds = script.get("seconds")
     segments = script.get("segments") or []
@@ -211,10 +219,10 @@ def script_errors(script):
     if isinstance(seconds, int) and speech > seconds * PLATFORM["max_chars_per_second"]:
         errors.append(f"口播 {speech} 字，超过每秒 {PLATFORM['max_chars_per_second']} 字")
     tags = [str(t).lstrip("#") for t in script.get("tags") or []]
-    if not PLATFORM["min_tags"] <= len(tags) <= PLATFORM["max_tags"] or PLATFORM["required_tag"] not in tags:
-        errors.append(f"话题标签需 {PLATFORM['min_tags']}–{PLATFORM['max_tags']} 个且含 #{PLATFORM['required_tag']}")
+    if not PLATFORM["min_tags"] <= len(tags) <= PLATFORM["max_tags"] or game["required_tag"] not in tags:
+        errors.append(f"话题标签需 {PLATFORM['min_tags']}–{PLATFORM['max_tags']} 个且含 #{game['required_tag']}")
     text = json.dumps(script, ensure_ascii=False)
-    hits = [w for w in PROFILE["banned_words"] if w in text]
+    hits = [w for w in games.banned_words(game) if w in text]
     if hits:
         errors.append("命中限制词：" + "、".join(hits))
     return errors
@@ -228,6 +236,8 @@ def render(script):
 
 
 def generate(model, item, verdict, fit, review=None):
+    game = games.get(item.get("game"))
+    system = script_system(game)
     facts = [c["text"] for c in verdict.get("claims", []) if c["status"] == "已证实"]
     breakdown = fit.get("breakdown") or {}
     prompt = (f"热点：\n{describe(item)}\n\n已证实的事实：{facts or '无（不要引用任何事实性说法）'}\n"
@@ -235,15 +245,15 @@ def generate(model, item, verdict, fit, review=None):
               f"爆点：{breakdown.get('why_hot') or '未拆解'}；火的形式：{breakdown.get('format') or '未拆解'}；"
               f"可借用元素：{breakdown.get('borrow') or '无'}"
               + (f"\n运营复核意见：{review}" if review else ""))
-    drafts = model.json(SCRIPT_SYSTEM, prompt, SCRIPT_SCHEMA).get("scripts") or []
-    problems = {i: script_errors(s) for i, s in enumerate(drafts)}
+    drafts = model.json(system, prompt, SCRIPT_SCHEMA).get("scripts") or []
+    problems = {i: script_errors(s, game) for i, s in enumerate(drafts)}
     if len(drafts) < 2 or any(problems.values()):
         feedback = "\n".join(f"第 {i + 1} 版：{'；'.join(e)}" for i, e in problems.items() if e) or "需要 2 版"
-        drafts = model.json(SCRIPT_SYSTEM, f"{prompt}\n\n上一稿没有通过程序检查，请修正后重写两版：\n{feedback}\n\n上一稿：\n"
+        drafts = model.json(system, f"{prompt}\n\n上一稿没有通过程序检查，请修正后重写两版：\n{feedback}\n\n上一稿：\n"
                             + json.dumps(drafts, ensure_ascii=False), SCRIPT_SCHEMA).get("scripts") or []
     scripts = []
     for draft in drafts[:3]:
-        errors = script_errors(draft)
+        errors = script_errors(draft, game)
         try:
             body = render(draft)
         except (KeyError, TypeError):

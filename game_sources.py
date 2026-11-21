@@ -3,19 +3,18 @@
   上榜词条   : 微博热搜、抖音热榜、B站热门中与游戏相关的条目 — a game topic that broke
                out onto a platform-wide board, with heat vouched for by the platform
 
-Only game-related entries are kept (keywords in game_profile.json).
+Only entries that name one of the tracked games are kept (keywords in games/*.json);
+each is tagged with the game it is about.
 """
 import json
 from datetime import datetime, timezone
 from hashlib import sha1
-from pathlib import Path
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
+import games
 import social
 
-PROFILE = json.loads((Path(__file__).resolve().parent / "game_profile.json").read_text(encoding="utf-8"))
-KEYWORDS = [k.casefold() for k in PROFILE["keywords"]]
 UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148"
 SOURCE = {"weibo": "微博热搜", "douyin": "抖音热榜", "bilibili": "B站热门"}
 
@@ -26,11 +25,6 @@ def fetch(url, referer=None):
         headers["Referer"] = referer
     with urlopen(Request(url, headers=headers), timeout=20) as response:
         return json.loads(response.read(5_000_000))
-
-
-def game_related(*texts):
-    blob = " ".join(str(t or "") for t in texts).casefold()
-    return any(k in blob for k in KEYWORDS)
 
 
 def to_iso(timestamp):
@@ -54,8 +48,9 @@ def weibo(data):
             continue
         rank += 1
         word = str(row["word"]).strip()
-        if game_related(word, row.get("note")):
-            yield dict(id=topic_id("wbt-", word), kind="trend", platform="微博", title=word[:80],
+        game = games.detect(word, row.get("note"))
+        if game:
+            yield dict(id=topic_id("wbt-", word), kind="trend", game=game, platform="微博", title=word[:80],
                        text=str(row.get("category") or ""), heat=social.count(row.get("num")), rank=rank,
                        published=to_iso(row.get("onboard_time")),
                        url="https://s.weibo.com/weibo?q=" + quote(f"#{word}#"),
@@ -68,8 +63,9 @@ def douyin(data):
         raise ValueError("抖音热榜返回格式异常")
     for rank, row in enumerate((r for r in rows if isinstance(r, dict) and r.get("word")), 1):
         word = str(row["word"]).strip()
-        if game_related(word):
-            yield dict(id=topic_id("dyt-", word), kind="trend", platform="抖音", title=word[:80], text="",
+        game = games.detect(word)
+        if game:
+            yield dict(id=topic_id("dyt-", word), kind="trend", game=game, platform="抖音", title=word[:80], text="",
                        heat=social.count(row.get("hot_value")), rank=rank, published=None,
                        url="https://www.douyin.com/search/" + quote(word),
                        publisher=SOURCE["douyin"], source=SOURCE["douyin"])
@@ -82,10 +78,11 @@ def bilibili(data):
     if data.get("code") != 0 or not isinstance(rows, list):
         raise ValueError("B站热门返回格式异常")
     for rank, row in enumerate((r for r in rows if isinstance(r, dict) and r.get("bvid")), 1):
-        if not game_related(row.get("title"), row.get("desc"), row.get("tname")):
+        game = games.detect(row.get("title"), row.get("desc"), row.get("tname"))
+        if not game:
             continue
         stat = row.get("stat") or {}
-        yield dict(id="bili-" + str(row["bvid"]), kind="trend", platform="B站", title=str(row.get("title", ""))[:120],
+        yield dict(id="bili-" + str(row["bvid"]), kind="trend", game=game, platform="B站", title=str(row.get("title", ""))[:120],
                    text=str(row.get("desc") or "")[:600], heat=social.count(stat.get("view")), rank=rank,
                    published=to_iso(row.get("pubdate")), url="https://www.bilibili.com/video/" + str(row["bvid"]),
                    publisher=(row.get("owner") or {}).get("name") or SOURCE["bilibili"], source=SOURCE["bilibili"],
