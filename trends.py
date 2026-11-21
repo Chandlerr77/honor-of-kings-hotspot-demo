@@ -6,6 +6,7 @@ from collections import defaultdict
 from datetime import datetime
 from urllib.request import Request, urlopen
 
+import game_sources
 import social
 from apify_pilot import ACTORS
 
@@ -61,7 +62,8 @@ def collect(platform):
         if not (published and title and re.fullmatch(pattern, post_id)):
             continue
         tags = [tag.strip().lstrip("#")[:40] for tag in row.get("hashtags") or [] if isinstance(tag, str)]
-        if not ("王者荣耀" in title or "王者荣耀" in body or "王者荣耀" in tags
+        # the search query is already 王者荣耀; any game keyword (王者、峡谷、KPL…) confirms relevance
+        if not (game_sources.game_related(title, body, *tags)
                 or any(alias.casefold() in (title+" "+body+" "+" ".join(tags)).casefold()
                        for theme, aliases in THEMES.items() if theme != "S45 上分与出装" for alias in aliases)):
             continue
@@ -69,7 +71,7 @@ def collect(platform):
         media_type = row.get("type")
         if platform == "douyin" and row.get("kind") == "video":
             media_type = media_type or "video"
-        yield dict(id=prefix + post_id, title=title[:180], publisher=(row.get("author") or {}).get("name") or SOURCE[platform],
+        yield dict(id=prefix + post_id, kind="post", platform="抖音" if platform == "douyin" else "小红书", title=title[:180], text=body.strip()[:600], publisher=(row.get("author") or {}).get("name") or SOURCE[platform],
                    published=published, views=social.count(stats.get("views")), rank=None, media_type=media_type,
                    match_type="话题 #王者荣耀" if "王者荣耀" in tags else "关键词 王者荣耀",
                    likes=social.count(stats.get("likes")), comments=social.count(stats.get("comments")),
@@ -77,16 +79,37 @@ def collect(platform):
                    tags=tags[:30], source=SOURCE[platform])
 
 MIN_VIDEO_VIEWS = 100_000
+MIN_VIDEO_LIKES = 10_000        # Douyin fallback when the play count is unavailable (free plan returns a sample)
+MIN_VIDEO_COMMENTS = 100
+BLOCKLIST = game_sources.PROFILE.get("blocklist", [])
 MIN_NOTE_LIKES = 1_000
 MIN_NOTE_COMMENTS = 50
 
+def blocked(item):
+    """Source blocklist: account trading, boosting and cheat promotions are never marketing material."""
+    blob = " ".join([str(item.get("title") or ""), str(item.get("text") or ""), *map(str, item.get("tags") or [])])
+    return next((word for word in BLOCKLIST if word in blob), None)
+
+
 def rejection(item):
+    word = blocked(item)
+    if word:
+        return "命中来源黑名单（" + word + "）"
+    if item.get("kind") == "trend":
+        return None                 # on a platform's own hot list: the platform vouches for the heat
     if not post_date(item.get("published")):
         return "超过 7 天或缺少发布时间"
+    if item["id"].startswith("xhs-"):
+        # 小红书不公开播放量，视频和图文都按互动判断
+        if (item.get("likes") or 0) < MIN_NOTE_LIKES or (item.get("comments") or 0) < MIN_NOTE_COMMENTS:
+            return "互动低于门槛"
+        return None
     if item.get("media_type") == "video":
         views = item.get("views")
         if views is None:
-            return "缺少可核验播放量"
+            if (item.get("likes") or 0) < MIN_VIDEO_LIKES or (item.get("comments") or 0) < MIN_VIDEO_COMMENTS:
+                return "未取得播放量，且互动低于门槛"
+            return None
         if views < MIN_VIDEO_VIEWS:
             return "播放量低于 10 万"
         return None

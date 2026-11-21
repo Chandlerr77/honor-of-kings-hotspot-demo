@@ -1,67 +1,206 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>热点编辑台 · 游戏营销 Demo</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>热点编辑台 · 游戏营销</title>
 <style>
-:root{color-scheme:dark;--bg:#11141b;--panel:#1a202a;--line:#313a48;--muted:#a8b4c5;--ink:#f0f3f8;--mint:#abf3cd;--warn:#f3cd89}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Microsoft YaHei UI",system-ui,sans-serif}header,main{max-width:1220px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}h1,h2,h3,p{margin:0 0 10px}h1{font-size:clamp(29px,5vw,47px);letter-spacing:-.04em}h2{font-size:20px}h3{font-size:17px}small,.muted{color:var(--muted)}small{font-size:13px}.brand{font-weight:750}.brand b{color:var(--mint);margin-right:9px}.hero{background:radial-gradient(ellipse at top right,#274c44,transparent 67%),#1a232e;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:20px}.hero p{color:#c8d4df}.pill{display:inline-block;border:1px solid #48685e;border-radius:100px;color:var(--mint);padding:2px 10px;font-size:13px;white-space:nowrap}.warn{color:var(--warn);border-color:#69583c}.bad{color:#ffada9;border-color:#754747}.steps,.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap}.steps{margin-top:18px;color:var(--muted);font-size:14px;gap:18px}.steps b{color:var(--mint);margin-right:5px}.layout{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:16px;align-items:start}.panel{border-radius:15px;border:1px solid var(--line);padding:18px;background:var(--panel)}.list{display:grid;gap:8px;margin-top:14px}.item{text-align:left;display:grid;gap:6px;width:100%;padding:12px;background:#151a22}.item[aria-pressed=true]{border-color:var(--mint);background:#243732}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#151a22}.section{border-top:1px solid var(--line);padding-top:15px;margin-top:16px}button,select,input,textarea{font:inherit;color:inherit;border:1px solid #495466;border-radius:8px;background:#242d3b;padding:7px 11px}button{cursor:pointer;font-size:14px;font-weight:650}button:hover:not(:disabled){border-color:var(--mint)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--mint);color:#101e19;border-color:var(--mint)}textarea,input{width:100%;background:#151a22}textarea{min-height:215px;resize:vertical}label{display:block;margin:9px 0 4px}a{color:var(--mint)}details{margin-top:13px}summary{cursor:pointer}ul{padding-left:22px;margin:8px 0}#notice{min-height:26px;color:var(--mint);margin:0 0 8px}.tabs{margin:10px 0}.tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}.script-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:5px}@media(max-width:760px){.layout,.summary{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}
-.trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.trend-panel{margin-bottom:16px}.trend-platform{margin:10px 0 0}.trend-post{display:block;text-align:left;background:none;border:0;padding:0;color:var(--mint);font-weight:500}.trend-post:hover{text-decoration:underline}</style></head><body>
-<header><div class="brand"><b>✦</b>游戏营销工作台</div><span class="pill">本地 Demo</span></header>
-<main><section class="hero"><h1>热点编辑台</h1><p>为《王者荣耀》筛选热点，制作 30–60 秒抖音竖屏脚本。</p><div class="actions"><button class="primary" id="live" hidden>立即采样</button></div><small id="sources" role="status"></small><div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与选题</span><span><b>04</b>生成</span><span><b>05</b>终审</span></div></section>
-<section class="panel trend-panel" id="trends" hidden><h2>近 7 天讨论话题</h2><p class="muted">至少两条相关作品才归为一组，优先展示多个平台都有讨论的话题。以下为采到的样本。</p><div class="trend-grid"></div></section><p id="notice" role="status"></p><div class="layout"><aside class="panel"><h2>热点队列</h2><label for="filter">核验状态</label><select id="filter"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select><label for="kind">内容来源</label><select id="kind"><option>全部</option><option>玩法与版本</option><option>自动采样</option><option>赛事回放</option><option>模拟</option></select><div class="list" id="list"></div><details><summary>游戏设定</summary><p>《王者荣耀》以 5v5 王者峡谷团队竞技为核心。本次面向开黑玩家与对局复盘爱好者，围绕团队配合、局内沟通和团战回放创作。营销避开玩家攻击和未经证实的活动承诺。</p></details></aside><article class="panel" id="detail"></article></div>
+:root{color-scheme:dark;--bg:#11141b;--panel:#1a202a;--line:#313a48;--muted:#a8b4c5;--ink:#f0f3f8;--mint:#abf3cd;--warn:#f3cd89;--bad:#ffada9}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Microsoft YaHei UI",system-ui,sans-serif}header,main{max-width:1220px;margin:auto;padding:24px}header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}h1,h2,h3,p{margin:0 0 10px}h1{font-size:clamp(29px,5vw,47px);letter-spacing:-.04em}h2{font-size:20px}h3{font-size:17px}small,.muted{color:var(--muted)}small{font-size:13px}.brand{font-weight:750}.brand b{color:var(--mint);margin-right:9px}.who{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.who input{width:150px}.hero{background:radial-gradient(ellipse at top right,#274c44,transparent 67%),#1a232e;border:1px solid var(--line);border-radius:18px;padding:28px;margin-bottom:20px}.hero p{color:#c8d4df}.pill{display:inline-block;border:1px solid #48685e;border-radius:100px;color:var(--mint);padding:2px 10px;font-size:13px;white-space:nowrap}.warn{color:var(--warn);border-color:#69583c}.bad{color:var(--bad);border-color:#754747}.dim{color:var(--muted);border-color:var(--line)}.steps,.actions,.tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.steps{margin-top:18px;color:var(--muted);font-size:14px;gap:18px}.steps b{color:var(--mint);margin-right:5px}.layout{display:grid;grid-template-columns:minmax(240px,330px) minmax(0,1fr);gap:16px;align-items:start}.panel{border-radius:15px;border:1px solid var(--line);padding:18px;background:var(--panel)}.list{display:grid;gap:8px;margin-top:14px;max-height:72vh;overflow:auto}.item{text-align:left;display:grid;gap:4px;width:100%;padding:12px;background:#151a22}.item[aria-pressed=true]{border-color:var(--mint);background:#243732}.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}.box{border:1px solid var(--line);border-radius:10px;padding:12px;background:#151a22;min-width:0}.section{border-top:1px solid var(--line);padding-top:15px;margin-top:16px}button,select,input,textarea{font:inherit;color:inherit;border:1px solid #495466;border-radius:8px;background:#242d3b;padding:7px 11px}button{cursor:pointer;font-size:14px;font-weight:650}button:hover:not(:disabled){border-color:var(--mint)}button:disabled{opacity:.46;cursor:default}.primary{background:var(--mint);color:#101e19;border-color:var(--mint)}textarea,.field{width:100%;background:#151a22}textarea{min-height:215px;resize:vertical}label{display:block;margin:9px 0 4px}a{color:var(--mint);overflow-wrap:anywhere}details{margin-top:13px}summary{cursor:pointer}ul{padding-left:22px;margin:8px 0}#notice{min-height:26px;color:var(--mint);margin:0 0 8px}.tabs{margin:10px 0}.tabs button[aria-pressed=true]{border-color:var(--mint);color:var(--mint)}.head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.log li{margin:2px 0}
+.trend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.trend-panel{margin-bottom:16px}.trend-platform{margin:10px 0 0}.trend-post{display:block;text-align:left;background:none;border:0;padding:0;color:var(--mint);font-weight:500}.trend-post:hover{text-decoration:underline}
+@media(max-width:760px){.layout,.summary,.grid2{grid-template-columns:1fr}header,main{padding:14px}.hero{padding:18px}}</style></head><body>
+<header><div class="brand"><b>✦</b>游戏营销工作台</div>
+<div class="who"><input class="field" id="me" placeholder="你的名字" aria-label="操作人"><input class="field" id="token" type="password" placeholder="团队口令" aria-label="团队口令" hidden><span class="pill dim" id="mode">连接中</span></div></header>
+<main><section class="hero"><h1>热点编辑台</h1><p>筛选《王者荣耀》游戏圈热点，制作 30–60 秒抖音竖屏脚本。</p>
+<div class="actions"><button class="primary" id="collect" hidden>采集游戏圈热点</button><button id="apify" hidden>加跑 Apify 搜索（计费）</button><button id="refresh" hidden>刷新快照</button></div>
+<small id="sources" role="status"></small>
+<div class="steps"><span><b>01</b>采集</span><span><b>02</b>核验</span><span><b>03</b>匹配与爆点拆解</span><span><b>04</b>生成</span><span><b>05</b>人工审核</span></div></section>
+<section class="panel trend-panel" id="trends" hidden><h2>近 7 天讨论话题</h2><p class="muted">至少两条相关作品才归为一组，优先展示多个平台都有讨论的话题。</p><div class="trend-grid"></div></section>
+<p id="notice" role="status"></p>
+<div class="layout"><aside class="panel"><h2>热点队列</h2>
+<label for="filter">核验状态</label><select id="filter" class="field"><option>全部</option><option>可信</option><option>存疑</option><option>不实</option></select>
+<label for="kind">来源</label><select id="kind" class="field"><option value="">全部</option><option value="trend">上榜词条</option><option value="post">游戏圈作品</option></select>
+<label for="stage">进度</label><select id="stage" class="field"><option value="">全部</option><option>待复核</option><option>待选题</option><option>待出稿</option><option>脚本审核中</option><option>已定稿</option><option>不跟进</option></select>
+<div class="list" id="list"></div></aside><article class="panel" id="detail"></article></div>
 </main><script>
 'use strict';
-const KEY='honor-of-kings-apify-v2';
+const LOCAL_KEY='honor-of-kings-review-v4';
+const KIND={trend:'上榜词条',post:'游戏圈作品'};
+const STAGES=['待复核','待选题','脚本审核中','待出稿','已定稿','不跟进'];  // queue order: work waiting on people first
 const $=id=>document.getElementById(id);
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let records=[];
-let activeIds=new Set();
-try{localStorage.removeItem('honor-of-kings-editor-v1');records=JSON.parse(localStorage.getItem(KEY)||'[]')}catch{}
-let selected=records[0]?.id, version=0;
-const category=r=>r.topicCard?'玩法与版本':r.live?'自动采样':r.real?'赛事回放':'模拟';
-function save(message){
- try{localStorage.setItem(KEY,JSON.stringify(records))}catch{message+='。浏览器存储不可用，刷新会清空进度'}
- $('notice').textContent=message;
- render();
+const stamp=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'未提供';
+const num=n=>n==null?'未返回':Number(n).toLocaleString('zh-CN');
+const link=(url,label)=>'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+'</a>';
+const lsGet=(k,d)=>{try{return localStorage.getItem(k)??d}catch{return d}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
+let RULES={banned_words:['赌博','包赢','全服免费','伤亡'],threshold:70,min_seconds:30,max_seconds:60,reject_reasons:['不符合游戏设定','品牌或合规风险','热点已过时','事实不准确','创意或质量不足','素材无法实现']};
+let mode='static', items=[], human={}, eventsFor={}, selected=null, tab=0, run=null, dirty=false;  // dirty: unsaved typing in the detail panel
+
+// ---------- data access ----------
+async function api(path,options={}){
+ const headers={'Content-Type':'application/json'};
+ const token=lsGet('hok-team-token','');if(token)headers['X-Team-Token']=token;
+ const response=await fetch(path,{...options,headers,body:options.body&&JSON.stringify(options.body)});
+ let data={};try{data=await response.json()}catch{}
+ if(response.status===401){$('token').hidden=false;throw Error('需要团队口令，请在右上角填写')}
+ return {ok:response.ok,status:response.status,data};
 }
-const statusClass=s=>s==='可信'?'':s==='存疑'?' warn':' bad';
-function topicEvidence(topic){
- const link=(url,label)=>'<a href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+label+'</a>';
- return '<p>'+link(topic.url,'查看官方来源')+(topic.related?' · '+link(topic.related,'查看官方视频'):'')+'</p><p class="muted">选题方向 · '+esc(topic.angle)+'</p>';
+async function detectMode(){
+ if(location.protocol==='file:')return 'none';
+ try{const r=await api('/api/reviews');if(r.ok){human=r.data.reviews;return 'server'}}catch(e){if(!$('token').hidden)return 'locked'}
+ return 'static';
 }
-function liveEvidence(r){
- const item=r.live;
- const labels={views:'播放次数',likes:'点赞',comments:'评论',shares:'分享',saves:'收藏'};
- const metrics=Object.entries(labels).map(([key,label])=>label+' '+(item[key]==null?'未返回':item[key].toLocaleString('zh-CN')));
- return '<p><a href="'+esc(item.url)+'" target="_blank" rel="noopener noreferrer">打开原始来源</a></p><p>'+esc(metrics.join(" · "))+ '</p>'+(item.match_type?'<p>'+esc(item.match_type)+'</p>':'')+
- '<details><summary>采样记录</summary><ul>'+item.observations.map(o=>'<li>'+esc(o.source)+' · '+esc(stamp(o.sampled))+
- (o.views==null?'':' · 播放 '+o.views.toLocaleString('zh-CN'))+(o.rank==null?'':' · 第 '+o.rank+' 位')+'</li>').join('')+'</ul></details>';
+function loadLocal(){try{human=JSON.parse(lsGet(LOCAL_KEY,'{}'))||{}}catch{human={}};['honor-of-kings-ai-v3','honor-of-kings-apify-v2','honor-of-kings-editor-v1'].forEach(k=>{try{localStorage.removeItem(k)}catch{}})}
+async function refresh(){
+ try{
+  const snap=mode==='server'?(await api('/api/hotspots')).data:await (await fetch('./hotspots.json',{cache:'no-store'})).json();
+  items=snap.items||[];run=snap.run;if(snap.rules)RULES={...RULES,...snap.rules};
+  if(mode==='server'){const r=await api('/api/reviews');if(r.ok)human=r.data.reviews;eventsFor={}}
+  renderTopics(snap.trends||[]);renderStatus();
+  dirty?renderList():render();
+ }catch(error){$('sources').textContent='读取数据失败：'+error.message}
+}
+async function commit(id,action,detail,mutate){
+ const me=$('me').value.trim();
+ if(mode==='server'&&!me){note('请先在右上角填写你的名字，操作会记在你名下');$('me').focus();return false}
+ const cur=human[id]||{data:{},version:0};
+ const data=structuredClone(cur.data);
+ mutate(data,{by:me||'本机',at:new Date().toISOString()});
+ if(mode!=='server'){human[id]={data,version:cur.version+1};lsSet(LOCAL_KEY,JSON.stringify(human));render();return true}
+ try{
+  const r=await api('/api/reviews',{method:'POST',body:{id,base_version:cur.version,data,action,detail,actor:me}});
+  if(r.status===409){human[id]=r.data.current;note('「'+r.data.current.by+'」刚刚更新了这条，已载入最新版本，请确认后再操作');render();return false}
+  if(!r.ok){note(r.data.error||'保存失败');return false}
+  human[id]={data,version:r.data.version,updated:r.data.updated,by:r.data.by};
+  delete eventsFor[id];render();return true;
+ }catch(error){note(error.message);return false}
+}
+const note=text=>{$('notice').textContent=text};
+
+// ---------- derived view of one hotspot ----------
+function view(item){
+ const h=human[item.id]?.data||{}, ai=item.ai?.status==='ok'?item.ai:null, v=ai?.verify, m=ai?.match;
+ const trust=h.review?.trust||v?.trust||'存疑';
+ const score=h.review?h.review.score:m?m.score:null;
+ const matchText=h.review?.match||(m?m.reason+(m.angle?' 切入角度：'+m.angle:''):'');
+ const eligible=trust==='可信'&&score!=null&&score>=RULES.threshold;
+ const scripts=h.scripts||[];
+ const stage=trust==='不实'||(h.review&&!eligible)||(!h.review&&m&&!m.eligible)?'不跟进':
+  trust==='存疑'&&!h.review?'待复核':!h.confirmed?'待选题':!scripts.length?'待出稿':scripts.some(s=>s.status==='通过')?'已定稿':'脚本审核中';
+ return {item,h,ai,v,m,trust,score,matchText,eligible,scripts,stage};
+}
+
+// ---------- rendering ----------
+function renderStatus(){
+ const parts=[];
+ if(mode==='static')parts.push('每小时更新游戏圈热点，每天 10:17 加跑 Apify（北京时间）');
+ if(run?.sampled)parts.push('最近采样 '+stamp(run.sampled));
+ if(run?.counts)parts.push(Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '));
+ if(run?.ai)parts.push(run.ai.model?'AI '+run.ai.model+' 本轮分析 '+run.ai.analyzed+' 条'+(run.ai.pending?'，排队 '+run.ai.pending+' 条':'')+(Object.keys(run.ai.errors||{}).length?'，失败 '+Object.keys(run.ai.errors).length+' 条':''):'AI：'+run.ai.error);
+ if(run?.errors&&Object.keys(run.errors).length)parts.push('来源异常：'+Object.entries(run.errors).map(([n,e])=>n+' '+e).join('；'));
+ $('sources').textContent=parts.join('；');
+}
+function renderList(){
+ const all=items.map(view);
+ const visible=all.filter(x=>($('filter').value==='全部'||x.trust===$('filter').value)&&(!$('kind').value||x.item.kind===$('kind').value)&&(!$('stage').value||x.stage===$('stage').value))
+  .sort((a,b)=>STAGES.indexOf(a.stage)-STAGES.indexOf(b.stage)||String(b.item.published||'').localeCompare(String(a.item.published||'')));
+ if(!visible.some(x=>x.item.id===selected)){selected=visible[0]?.item.id??null;tab=0}
+ lsSet('hok-selected',selected||'');
+ $('list').innerHTML=visible.map(x=>'<button class="item" data-id="'+esc(x.item.id)+'" aria-pressed="'+(x.item.id===selected)+'"><strong>'+esc(x.item.title)+'</strong><small>'+
+  esc(KIND[x.item.kind]||'')+' · '+esc(x.item.platform||x.item.source)+(x.item.on_board?' · 在榜':'')+'</small><small><span class="pill'+trustClass(x.trust)+'">'+x.trust+'</span> '+esc(x.stage)+(x.score!=null?' · '+x.score+' 分':'')+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
+}
+const trustClass=t=>t==='可信'?'':t==='存疑'?' warn':' bad';
+function metrics(item){
+ const rows=[];
+ if(item.rank)rows.push('榜单第 '+item.rank+' 位');
+ if(item.heat!=null&&item.kind==='trend')rows.push('热度 '+num(item.heat));
+ const labels={views:'播放',likes:'点赞',comments:'评论',shares:'分享',saves:'收藏'};
+ for(const [k,label] of Object.entries(labels))if(item[k]!=null)rows.push(label+' '+num(item[k]));
+ return rows.join(' · ')||'平台未返回互动数据';
+}
+function verifyBox(x){
+ const v=x.v, h=x.h;
+ let html='<section class="box"><h3>真实性核验</h3>';
+ if(v){
+  if(v.summary)html+='<p><strong>'+esc(v.summary)+'</strong></p>';
+  html+='<p>'+esc(v.reason)+'</p>';
+  html+=v.claims.length?'<ul>'+v.claims.map(c=>'<li><span class="pill'+(c.status==='已证实'?'':c.status==='未证实'?' warn':' bad')+'">'+esc(c.status)+'</span> '+esc(c.text)+(c.source_url?' · '+link(c.source_url,'来源'):'')+'</li>').join('')+'</ul>':'<p class="muted">未发现需要核对的事实性说法。</p>';
+  if(v.sources.length)html+='<p>参考来源 · '+v.sources.map(s=>link(s.url,s.title||s.url)).join(' · ')+'</p>';
+  if(v.rule_notes?.length)html+='<p class="muted">程序规则 · '+esc(v.rule_notes.join('；'))+'</p>';
+  html+='<small>'+esc(x.ai.model)+(v.searched?' · 已联网检索':'')+' · '+esc(stamp(x.ai.analyzed))+'</small>';
+ }else html+='<p class="muted">尚未经过 AI 核验（未配置模型或排队中），请打开原始来源人工核对。</p>';
+ if(h.review)html+='<p class="section">人工复核 · <span class="pill'+trustClass(h.review.trust)+'">'+esc(h.review.trust)+'</span> '+esc(h.review.note)+'<br><small>'+esc(h.review.by)+' · '+esc(stamp(h.review.at))+'</small></p>';
+ const open=x.trust==='存疑'&&!h.review;
+ html+='<details'+(open?' open':'')+'><summary>'+(open?'人工复核（必填）':'人工改判')+'</summary>'+
+  '<label for="rv-trust">复核结论</label><select id="rv-trust" class="field"><option>可信</option><option>不实</option></select>'+
+  '<label for="rv-note">复核依据（核对了哪些来源）</label><input id="rv-note" class="field">'+
+  '<div class="grid2"><div><label for="rv-score">适配分（0–100）</label><input id="rv-score" class="field" type="number" min="0" max="100" value="'+(x.score??'')+'"></div>'+
+  '<div><label for="rv-match">适配理由</label><input id="rv-match" class="field" value="'+esc(x.matchText)+'"></div></div>'+
+  '<div class="actions section"><button data-action="review">提交复核</button></div></details></section>';
+ return html;
+}
+function matchBox(x){
+ let html='<section class="box"><h3>游戏匹配</h3>';
+ if(x.score==null)return html+'<p class="muted">'+(x.trust==='存疑'?'存疑热点跳过匹配，人工复核后填写适配分。':x.trust==='不实'?'不实热点不进入匹配。':'等待 AI 打分。')+'</p></section>';
+ html+='<p><strong>'+x.score+' / 100</strong> · 门槛 '+RULES.threshold+(x.h.review?' · 人工评分':'')+'</p><p>'+esc(x.matchText)+'</p>';
+ if(x.m?.risks?.length)html+='<p class="muted">风险 · '+esc(x.m.risks.join('；'))+'</p>';
+ const b=x.m?.breakdown;
+ if(b&&(b.why_hot||b.format)){
+  html+='<div class="section"><div class="head"><h3>爆点拆解</h3>'+(b.lifespan?'<span class="pill warn">预计还能热 '+esc(b.lifespan)+'</span>':'')+'</div>'+
+   '<p><span class="muted">为什么火</span> '+esc(b.why_hot)+'</p><p><span class="muted">火的形式</span> '+esc(b.format)+'</p>'+
+   (b.borrow?.length?'<p class="muted">可借用元素</p><ul>'+b.borrow.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':'')+'</div>';
+ }
+ return html+'</section>';
+}
+function scriptSection(x){
+ const s=x.scripts[tab];
+ if(!s)return '';
+ const done=s.status==='通过';
+ return '<section class="section"><div class="head"><h3>脚本审核</h3><span class="pill'+(done?'':s.status==='驳回'?' bad':' warn')+'">'+esc(s.status)+'</span><small>修订 '+(s.history.length+1)+(s.ai?' · AI 草稿':' · 模板草稿')+'</small></div>'+
+ '<div class="tabs">'+x.scripts.map((d,i)=>'<button data-tab="'+i+'" aria-pressed="'+(i===tab)+'">'+esc(d.name)+'</button>').join('')+'</div>'+
+ (s.angle?'<p class="muted">角度 · '+esc(s.angle)+'</p>':'')+(s.borrowed?'<p class="muted">借用爆点 · '+esc(s.borrowed)+'</p>':'')+
+ '<label for="duration">预计时长（秒）</label><input class="field" id="duration" type="number" min="1" step="1" value="'+esc(s.seconds)+'" '+(done?'readonly':'')+'>'+
+ '<label for="script">竖屏分镜、口播和话题标签</label><textarea id="script" '+(done?'readonly':'')+'>'+esc(s.body)+'</textarea><p id="checks" class="muted"></p>'+
+ (s.ai&&s.checks?.length?'<p class="muted">生成时规则未通过：'+esc(s.checks.join('；'))+'</p>':'')+
+ (s.rejection?'<p>驳回 · <span class="pill bad">'+esc(s.rejection.reason)+'</span> '+esc(s.rejection.note)+' <small>'+esc(s.rejection.by)+' · '+esc(stamp(s.rejection.at))+'</small></p>':'')+
+ (done?'<p>终稿 · '+esc(s.approved?.by)+' · '+esc(stamp(s.approved?.at))+'</p><div class="actions"><button class="primary" data-action="export">导出已审脚本</button><button data-action="reopen">重新打开</button></div>':
+  '<div class="grid2"><div><label for="rj-reason">驳回原因</label><select id="rj-reason" class="field"><option value="">选择原因</option>'+RULES.reject_reasons.map(r=>'<option>'+esc(r)+'</option>').join('')+'</select></div><div><label for="rj-note">补充说明</label><input id="rj-note" class="field"></div></div>'+
+  '<div class="actions section"><button data-action="save">保存修改</button><button data-action="reject">驳回</button><button class="primary" data-action="approve">确认终稿</button></div>')+'</section>';
 }
 function render(){
- const visible=records.filter(r=>activeIds.has(r.id)&&($('filter').value==='全部'||r.trust===$('filter').value)&&($('kind').value==='全部'||category(r)===$('kind').value));
- if(!visible.some(r=>r.id===selected)){selected=visible[0]?.id;version=0}
- $('list').innerHTML=visible.map(r=>'<button class="item" data-id="'+r.id+'" aria-pressed="'+(r.id===selected)+'"><strong>'+esc(r.title)+'</strong><small>'+(r.topicCard?esc(r.topicCard.label):r.live?esc(r.live.source):r.real?'播放快照约 79.3 万':'热度 '+r.heat)+' · '+r.trust+' · '+category(r)+'</small></button>').join('')||'<p class="muted">当前没有热点</p>';
- const r=visible.find(r=>r.id===selected);
- if(!r){$('detail').innerHTML='<h2>开始选题</h2><p class="muted">采集演示热点后，即可查看证据、确认选题并生成脚本。</p>';return}
- const eligible=r.trust==='可信'&&r.score>=70;
- const evidence=r.evidence.map(([name,body])=>'<li><strong>'+esc(name)+'</strong> · '+esc(body)+'</li>').join('');
- const v=r.scripts[version];
+ renderList();
+ const item=items.find(i=>i.id===selected);
+ if(!item){$('detail').innerHTML='<h2>开始选题</h2><p class="muted">采集到热点后，即可查看核验证据、确认选题并生成脚本。</p>';return}
+ const x=view(item);
  $('detail').innerHTML=
- '<div class="script-head"><span class="pill'+statusClass(r.trust)+'">'+r.trust+'</span><small>'+(r.topicCard?esc(r.topicCard.label):r.live?esc(r.live.source)+(r.live.views==null?'':' · 播放 '+r.live.views.toLocaleString('zh-CN')):r.real?'B 站官方回放 · 播放快照约 79.3 万':'模拟来源 · 热度 '+r.heat)+'</small></div>'+
- '<h2>'+esc(r.title)+'</h2><small>发布时间 '+esc(r.published)+' · 采集时间 '+esc(r.ingested)+'</small>'+
- '<div class="summary"><section class="box"><h3>核验证据</h3><p>'+esc(r.reason)+'</p><ul>'+evidence+'</ul>'+(r.topicCard?topicEvidence(r.topicCard):r.live?liveEvidence(r):r.real?'<a href="https://www.bilibili.com/video/BV1HvWJ6WE8B?p=1" target="_blank" rel="noopener noreferrer">打开 B 站赛事原片</a>':'')+'</section>'+
- '<section class="box"><h3>游戏匹配</h3>'+(r.trust==='可信'?'<p><strong>'+r.score+' / 100</strong> · 门槛 70</p><p>'+esc(r.match)+'</p>':'<p class="muted">等待可信结论，暂不进入匹配。</p>')+'</section></div>'+
- (r.review?'<p>复核记录 · '+esc(r.review)+'</p>':'')+
- (r.trust==='存疑'?'<label for="review">补充证据与复核理由</label><input id="review" placeholder="填写核对的来源和结果">'+(r.live?'<label for="score">适配分（0–100）</label><input id="score" type="number" min="0" max="100"><label for="match">适配理由</label><input id="match">':'')+'<div class="actions section"><button data-action="credible">复核为可信</button><button data-action="false">复核为不实</button></div>':'')+
- '<div class="actions section"><button data-action="confirm" '+(!eligible||r.confirmed?'disabled':'')+'>'+(r.confirmed?'选题已确认':'确认选题')+'</button><button class="primary" data-action="generate" '+(!r.confirmed||r.scripts.length?'disabled':'')+'>生成两版脚本</button></div>'+
- (v?'<section class="section"><div class="script-head"><h3>脚本终审</h3><span class="pill">'+esc(v.status)+'</span><small>修订 '+(v.history.length+1)+'</small></div><div class="tabs">'+r.scripts.map((s,i)=>'<button data-version="'+i+'" aria-pressed="'+(i===version)+'">'+esc(s.name)+'</button>').join('')+'</div>'+
- '<label for="duration">预计时长（秒）</label><input id="duration" type="number" min="1" step="1" value="'+v.seconds+'" '+(v.status==='通过'?'readonly':'')+'><label for="script">竖屏分镜、口播和话题标签</label><textarea id="script" '+(v.status==='通过'?'readonly':'')+'>'+esc(v.body)+'</textarea>'+
- '<p id="checks" class="muted"></p>'+(v.rejection?'<p>最近驳回原因 · '+esc(v.rejection)+'</p>':'')+
- (v.status==='通过'?'<button class="primary" data-action="export">导出已审脚本</button>':'<label for="reject">驳回理由</label><input id="reject" placeholder="驳回时必填"><div class="actions section"><button data-action="save">保存修改</button><button data-action="reject">驳回</button><button class="primary" data-action="approve">确认终稿</button></div>')+'</section>':'');
- if(v)checkDraft();
+ '<div class="head"><span class="pill'+trustClass(x.trust)+'">'+x.trust+(x.h.review?' · 人工':x.v?' · AI 初判':'')+'</span><span class="pill dim">'+esc(KIND[item.kind]||'')+'</span><span class="pill dim">'+esc(x.stage)+'</span>'+(item.on_board?'<span class="pill warn">当前在榜</span>':'')+'</div>'+
+ '<h2>'+esc(item.title)+'</h2><p>'+link(item.url,'打开原始来源')+' · '+esc(item.publisher||item.source)+'</p>'+
+ '<small>发布 '+esc(stamp(item.published))+' · 首次采集 '+esc(stamp(item.first_seen))+' · 最近采集 '+esc(stamp(item.last_seen))+'</small><p>'+esc(metrics(item))+'</p>'+
+ (item.text?'<details><summary>正文摘录</summary><p>'+esc(item.text)+'</p></details>':'')+
+ '<div class="summary">'+verifyBox(x)+matchBox(x)+'</div>'+
+ '<div class="actions section"><button data-action="confirm" '+(!x.eligible||x.h.confirmed?'disabled':'')+'>'+(x.h.confirmed?'选题已确认 · '+esc(x.h.confirmed.by):'确认选题')+'</button>'+
+ '<button class="primary" data-action="generate" '+(!x.h.confirmed||x.scripts.length?'disabled':'')+'>'+(x.ai?.scripts?'载入 AI 脚本':'生成脚本')+'</button>'+
+ (!x.eligible&&!x.h.confirmed?'<small>需可信且适配分不低于 '+RULES.threshold+' 才能确认选题</small>':'')+'</div>'+
+ scriptSection(x)+
+ (mode==='server'?'<section class="section"><h3>操作记录</h3><ul class="log" id="log"><li class="muted">加载中…</li></ul></section>':'<p class="muted section">静态演示站：审核记录只保存在当前浏览器。团队协作请使用 serve.py 服务。</p>');
+ if(x.scripts[tab])checkDraft();
+ if(mode==='server')loadEvents(item.id);
+ dirty=false;
 }
+async function loadEvents(id){
+ if(!eventsFor[id]){try{eventsFor[id]=(await api('/api/events?id='+encodeURIComponent(id))).data.events||[]}catch{eventsFor[id]=[]}}
+ if(selected!==id||!$('log'))return;
+ $('log').innerHTML=eventsFor[id].map(e=>'<li><small>'+esc(stamp(e.at))+'</small> '+esc(e.actor)+' · '+esc(e.action)+(e.detail?' · '+esc(e.detail):'')+'</li>').join('')||'<li class="muted">暂无操作</li>';
+}
+function renderTopics(topics){
+ const root=$('trends');root.hidden=!topics.length;
+ root.querySelector('.trend-grid').innerHTML=topics.map(t=>'<div class="box"><h3>'+esc(t.title)+'</h3><small>'+t.count+' 条样本 · '+t.platforms.length+' 个平台</small>'+
+  t.platforms.map(p=>'<p class="trend-platform"><strong>'+esc(p.name)+'</strong> · '+p.count+' 条</p><ul>'+p.examples.map(e=>'<li><button class="trend-post" data-post="'+esc(e.id)+'">'+esc(e.title)+'</button></li>').join('')+'</ul>').join('')+'</div>').join('');
+}
+
+// ---------- rules ----------
 function draftErrors(seconds,body){
  const errors=[];
- if(!Number.isInteger(seconds)||seconds<30||seconds>60)errors.push('时长需为 30–60 秒');
+ if(!Number.isInteger(seconds)||seconds<RULES.min_seconds||seconds>RULES.max_seconds)errors.push('时长需为 '+RULES.min_seconds+'–'+RULES.max_seconds+' 秒');
  if(!['开场','实录','结尾'].every(label=>body.includes(label))||!/#\S+/.test(body))errors.push('需有开场、实录、结尾与话题标签');
- if(/赌博|包赢|全服免费|伤亡/.test(body))errors.push('命中演示限制词');
+ const hits=RULES.banned_words.filter(w=>body.includes(w));
+ if(hits.length)errors.push('命中限制词：'+hits.join('、'));
  return errors;
 }
 function checkDraft(){
@@ -69,135 +208,92 @@ function checkDraft(){
  $('checks').textContent=errors.length?'规则检查 · '+errors.join(' / '):'规则检查通过 · 请人工核对游戏设定和素材';
  return errors;
 }
-function variants(r){
- if(r.topicCard){
-  const card=r.topicCard;
-  const history=card.id.startsWith('topic-resonance')?' 字幕注明：本期限时档期已结束。':'';
-  return [
-   {name:'A · 现象切入',seconds:42,body:'00–05 秒｜开场：'+card.hook+history+'\n05–32 秒｜实录：'+card.shot+'\n32–42 秒｜结尾：邀请观众分享自己的玩法体验。\n#王者荣耀 #玩法观察'},
-   {name:'B · 公告解读',seconds:36,body:'00–05 秒｜开场：'+card.title+'。'+history+'\n05–27 秒｜实录：先出示官方来源，口播「'+card.summary+'」再切到自录或示意画面。\n27–36 秒｜结尾：你更想看哪项玩法的拆解？\n#王者荣耀 #版本解读'}
-  ].map(draft=>({...draft,status:'待审',history:[]}));
- }
- if(r.live)return ['热点切入','实录复盘'].map((name,i)=>({
-  name,seconds:i?36:42,history:[],status:'待审',
-  body:(i?'00–05 秒｜开场：今天用一段自录对局，看这条热点能给排位什么启发。':'00–05 秒｜开场：最近有条内容值得聊聊，你怎么看？')+'\n05–27 秒｜实录：片头标出来源标题「'+r.title+'」，依据复核要点「'+r.review+'」写口播；切入自录王者峡谷画面，展示「'+r.match+'」对应的情境。\n27–'+(i?36:42)+' 秒｜结尾：请观众分享自己的处理方式。\n#王者荣耀 #王者峡谷'
- }));
- if(r.real)return ['赛后讨论','开团教学'].map((name,i)=>({
-  name,seconds:40,history:[],status:'待审',
-  body:(i===0?'00–05 秒｜开场：看完北京WB 对 广州TTG，你最想复盘哪个瞬间？':'00–05 秒｜开场：聊完 KPL，回到自己的排位：队友还没到，要先开团吗？')+'\n05–31 秒｜实录：用自录王者峡谷对局演示集合信号、队友靠拢和跟进输出，标注自录演示。\n31–40 秒｜结尾：请观众分享自己判断开团时机的方法。\n#王者荣耀 #KPL #团战复盘'
- }));
- const teamwork=r.id==='cloud';
- return [
-  {name:'A · 互动钩子',seconds:42,body:teamwork?'00–05 秒｜开场：团战画面定格。口播「不开麦，队友能看懂你想干嘛吗？」\n05–32 秒｜实录：先放集合信号，再切到小地图里的队友走位，最后慢放前排进场与队友跟进。口播「看到队友靠过来，才是这波能接的信号。」\n32–42 秒｜结尾：回放关键一秒。口播「把这条发给那个不用开麦也懂你的队友。」\n#王者荣耀 #开黑默契':'00–05 秒｜开场：黑屏播放一段对局音效。口播「闭眼听，你猜这是峡谷里的哪个瞬间？」\n05–32 秒｜实录：依次播放技能施放、回城和推塔的自录声音，留出猜题时间，再用对应对局画面揭晓。\n32–42 秒｜结尾：字幕公布三题答案。口播「你猜对了几题？」\n#王者荣耀 #峡谷听力挑战'},
-  {name:'B · 实录剪辑',seconds:36,body:teamwork?'00–04 秒｜开场：先放团战结果，字幕「这波配合，开打前就能看出来」。\n04–27 秒｜实录：回到开团前，从同一段对局中标出集合信号、队友靠拢和跟进输出三个瞬间。\n27–36 秒｜结尾：并排回放进场与跟进画面，字幕「你最信任哪位开黑队友？」\n#王者荣耀 #峡谷团战复盘':'00–04 秒｜开场：字幕「只听声音，你能认出这场团战吗？」\n04–27 秒｜实录：先播放原声，再按声音出现顺序切回对局，展示技能命中和队友跟进的对应画面。\n27–36 秒｜结尾：保留最后一段音效，邀请观众在评论区猜对应画面。\n#王者荣耀 #听声猜团战'}
- ].map(v=>({...v,status:'待审',history:[]}));
+function templates(x){
+ const b=x.m?.breakdown, borrow=b?.borrow?.[0];
+ return ['热点切入','玩法结合'].map((name,i)=>({name,angle:'',borrowed:borrow||'',seconds:i?36:42,ai:false,status:'待审',history:[],
+  body:'00–05 秒｜开场：'+(i?'今天用一局自录对局聊聊「'+x.item.title+'」':'最近「'+x.item.title+'」很火，你怎么看？')+
+  '\n05–'+(i?27:32)+' 秒｜实录：片头标出来源；'+(borrow?'借用「'+borrow+'」；':'')+'切入自录王者峡谷画面，展示「'+x.matchText+'」对应的情境。'+
+  '\n'+(i?27:32)+'–'+(i?36:42)+' 秒｜结尾：请观众在评论区分享自己的看法。\n#王者荣耀 #王者峡谷'}));
 }
-$('filter').addEventListener('change',render);
-$('kind').addEventListener('change',render);
-$('list').addEventListener('click',e=>{const button=e.target.closest('[data-id]');if(button){selected=button.dataset.id;version=0;render()}});
-$('detail').addEventListener('input',e=>{if(['duration','script'].includes(e.target.id))checkDraft()});
-$('detail').addEventListener('click',e=>{
- const button=e.target.closest('button');
- if(!button)return;
- const r=records.find(row=>row.id===selected);
- if(button.dataset.version!==undefined){version=Number(button.dataset.version);render();return}
- const action=button.dataset.action;
- if(action==='credible'||action==='false'){
-  const reason=$('review').value.trim();
-  if(!reason){$('notice').textContent='请填写复核理由';return}
-  if(r.live&&action==='credible'){
-   const score=$('score').value, reason=$('match').value.trim();
-   if(!score||!Number.isInteger(Number(score))||Number(score)<0||Number(score)>100||!reason){$('notice').textContent='请填写 0–100 的适配分和适配理由';return}
-   r.score=Number(score);r.match=reason;
-  }
-  r.trust=action==='credible'?'可信':'不实';r.review=reason;save('已记录人工复核');return;
+
+// ---------- actions ----------
+async function act(action){
+ const item=items.find(i=>i.id===selected);if(!item)return;
+ const x=view(item);
+ if(action==='review'){
+  const trust=$('rv-trust').value, noteText=$('rv-note').value.trim(), score=Number($('rv-score').value), matchText=$('rv-match').value.trim();
+  if(!noteText)return note('请填写复核依据');
+  if(trust==='可信'&&(!Number.isInteger(score)||score<0||score>100||!matchText))return note('判为可信时请填写 0–100 的适配分和适配理由');
+  if(await commit(item.id,'review',trust+' · '+noteText,(d,who)=>{d.review={trust,note:noteText,score:trust==='可信'?score:null,match:trust==='可信'?matchText:'',...who};if(trust!=='可信'){delete d.confirmed}}))note('已记录人工复核');
+  return;
  }
- if(action==='confirm'){r.confirmed=true;save('已确认选题');return}
- if(action==='generate'){r.scripts=variants(r);version=0;save('已生成两版模板草稿，请审阅');return}
- const v=r.scripts[version];
+ if(action==='confirm'){if(await commit(item.id,'confirm','',(d,who)=>{d.confirmed=who}))note('已确认选题');return}
+ if(action==='generate'){
+  let scripts, msg;
+  if(x.ai?.scripts){scripts=x.ai.scripts.map(s=>({...s,ai:true,status:'待审',history:[]}));msg='已载入 AI 脚本，请审阅'}
+  else if(mode==='server'){
+   note('正在调用模型生成脚本…');
+   try{const r=await api('/api/generate',{method:'POST',body:{id:item.id,review:x.h.review?.note,score:x.score,match:x.matchText}});
+    if(!r.ok)throw Error(r.data.error||'HTTP '+r.status);
+    scripts=r.data.scripts.map(s=>({...s,ai:true,status:'待审',history:[]}));msg='已生成 AI 脚本，请审阅'}
+   catch(error){scripts=templates(x);msg='模型生成失败（'+error.message+'），已改用模板草稿'}
+  }else{scripts=templates(x);msg='静态站点无法调用模型，已生成模板草稿'}
+  tab=0;if(await commit(item.id,'generate',scripts.length+' 版'+(scripts[0].ai?' AI':' 模板'),d=>{d.scripts=scripts}))note(msg);
+  return;
+ }
+ const s=x.scripts[tab];if(!s)return;
  if(action==='export'){
-  const url=URL.createObjectURL(new Blob(['《王者荣耀》｜'+r.title+'\n'+v.name+'｜'+v.seconds+' 秒\n\n'+v.body],{type:'text/plain;charset=utf-8'}));
+  const text='《王者荣耀》｜'+item.title+'\n'+s.name+'｜'+s.seconds+' 秒｜终稿：'+(s.approved?.by||'')+' '+stamp(s.approved?.at)+(s.borrowed?'\n借用爆点：'+s.borrowed:'')+'\n来源：'+item.url+'\n\n'+s.body;
+  const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));
   const a=document.createElement('a');a.href=url;a.download='王者荣耀-已审脚本.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;
  }
- if(action==='approve'&&checkDraft().length){$('notice').textContent='解决规则检查项后即可确认终稿';return}
- const rejection=$('reject').value.trim();
- if(action==='reject'&&!rejection){$('notice').textContent='请填写驳回理由';return}
- const seconds=Number($('duration').value),body=$('script').value.trim();
- if(seconds!==v.seconds||body!==v.body){v.history.push({seconds:v.seconds,body:v.body});v.seconds=seconds;v.body=body}
- if(action==='reject')v.rejection=rejection;
- v.status={save:'修改中',reject:'驳回',approve:'通过'}[action];
- save('脚本状态已更新为'+v.status);
-});
-const localService=location.protocol==='http:' && ['127.0.0.1','localhost'].includes(location.hostname);
-const stamp=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}):'未提供';
-function renderTrends(topics){
- const root=$('trends');
- root.hidden=!topics.length;
- root.querySelector('.trend-grid').innerHTML=topics.map(topic=>
-  '<div class="box"><h3>'+esc(topic.title)+'</h3><small>'+topic.count+' 条样本 · '+topic.platforms.length+' 个平台</small>'+
-  topic.platforms.map(platform=>'<p class="trend-platform"><strong>'+esc(platform.name)+'</strong> · '+platform.count+' 条</p>'+
-   '<ul>'+platform.examples.map(item=>
-    '<li><button class="trend-post" data-post="'+esc(item.id)+'">'+esc(item.title)+'</button><small>'+
-    [item.likes==null?'':'点赞 '+item.likes,item.comments==null?'':'评论 '+item.comments,
-     item.views==null?'':'播放 '+item.views].filter(Boolean).join(' · ')+'</small></li>'
-   ).join('')+'</ul>'
-  ).join('')+'</div>'
- ).join('');
+ if(action==='reopen'){if(await commit(item.id,'reopen',s.name,d=>{d.scripts[tab].status='修改中';d.scripts[tab].approved=null}))note('已重新打开');return}
+ const seconds=Number($('duration').value), body=$('script').value.trim();
+ if(action==='approve'&&checkDraft().length)return note('解决规则检查项后才能确认终稿');
+ const reason=$('rj-reason').value, rjNote=$('rj-note').value.trim();
+ if(action==='reject'&&!reason)return note('请选择驳回原因');
+ const status={save:'修改中',reject:'驳回',approve:'通过'}[action];
+ const detail=s.name+(action==='reject'?' · '+reason+(rjNote?' · '+rjNote:''):'');
+ if(await commit(item.id,action,detail,(d,who)=>{
+  const t=d.scripts[tab];
+  if(seconds!==t.seconds||body!==t.body){t.history.push({seconds:t.seconds,body:t.body,...who});t.seconds=seconds;t.body=body}
+  t.status=status;
+  if(action==='reject')t.rejection={reason,note:rjNote,...who};
+  if(action==='approve')t.approved=who;
+ }))note('脚本状态已更新为'+status);
 }
-$('trends').addEventListener('click',e=>{
- const target=e.target.closest('[data-post]');
- if(!target)return;
- $('filter').value='全部';$('kind').value='全部';
- selected='live-'+target.dataset.post;version=0;
- render();$('detail').scrollIntoView({block:'start'});
-});
-async function syncLive(trigger=false){
- const button=$('live');
- button.disabled=true;
- try{
-  if(trigger&&localService)await fetchData('/api/collect',{method:'POST'});
-  const {items,run,trends=[]}=await fetchData(localService?'/api/hotspots':'./hotspots.json');
-  activeIds=new Set(items.map(item=>'live-'+item.id));
-  renderTrends(trends);
-  let added=0;
-  for(const item of items){
-   const id='live-'+item.id;
-   let record=records.find(row=>row.id===id);
-   if(!record){
-    record={id,real:true,trust:'存疑',reason:'运营需打开原片，核对拟引用的事实和内容。',score:0,
-     match:'当前还没有适配评分。复核时请评估是否适合王者荣耀营销。',confirmed:false,scripts:[]};
-    records.push(record);added++;
-   }
-   Object.assign(record,{live:item,title:item.title,published:item.version_date?'版本日期 '+item.version_date:stamp(item.published),ingested:stamp(item.first_seen),
-    evidence:[[item.publisher,item.source+' · 最近采样 '+stamp(item.last_seen)]]});
-  }
-  if(trigger&&added){$('filter').value='全部';$('kind').value='全部';selected=records.find(row=>row.live)?.id;version=0}
-  const counts=run?Object.entries(run.counts).map(([name,n])=>{
-   const stats=run.filtering?.[name];
-   const excluded=stats?Object.entries(stats.rejected).map(([reason,count])=>reason+' '+count+' 条').join('、'):'';
-   return name+' 入库 '+n+' 条'+(stats?' / 候选 '+stats.candidates+' 条':'')+(excluded?'（'+excluded+'）':'');
-  }).join('；'):'队列已清空，等待 Apify 采样';
-  const errors=run?Object.entries(run.errors).map(([name,error])=>name+'：'+error).join(' · '):'';
-  $('sources').textContent=[localService?'':'每日 10:17 自动采样（北京时间）',run?'最近采样 '+stamp(run.sampled):'',counts,errors].filter(Boolean).join('；');
-  if(trigger||(added&&!records.find(r=>r.id===selected)?.scripts.length))save(added?'同步了 '+added+' 条新记录':'同步完成，采样详情见上方');
-  else if(!activeIds.has(selected)||(!document.activeElement?.matches('input,textarea')&&!records.find(r=>r.id===selected)?.scripts.length))render();
- }catch(error){$('sources').textContent='读取采样服务失败：'+error.message}
- finally{button.disabled=false}
+
+// ---------- wiring ----------
+['filter','kind','stage'].forEach(id=>$(id).addEventListener('change',render));
+$('list').addEventListener('click',e=>{const b=e.target.closest('[data-id]');if(b){selected=b.dataset.id;tab=0;render()}});
+$('trends').addEventListener('click',e=>{const t=e.target.closest('[data-post]');if(!t)return;['filter','kind','stage'].forEach(id=>$(id).value=id==='filter'?'全部':'');selected=t.dataset.post;tab=0;render();$('detail').scrollIntoView({block:'start'})});
+$('detail').addEventListener('input',e=>{dirty=true;if(['duration','script'].includes(e.target.id))checkDraft()});
+$('detail').addEventListener('change',()=>{dirty=true});
+$('detail').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.tab!==undefined){tab=Number(b.dataset.tab);render();return}if(b.dataset.action)act(b.dataset.action)});
+$('me').value=lsGet('hok-operator','');
+selected=lsGet('hok-selected','')||null;
+$('me').addEventListener('change',()=>lsSet('hok-operator',$('me').value.trim()));
+$('token').addEventListener('change',async()=>{lsSet('hok-team-token',$('token').value);await boot()});
+async function collect(apify){
+ const buttons=[$('collect'),$('apify')];buttons.forEach(b=>b.disabled=true);note(apify?'正在采集（含 Apify）并运行 AI 分析，可能需要几分钟…':'正在采集并运行 AI 分析…');
+ try{const r=await api('/api/collect',{method:'POST',body:{apify}});note(r.data.busy?'后台正在采样，稍后自动刷新':'采集完成');await refresh()}
+ catch(error){note(error.message)}finally{buttons.forEach(b=>b.disabled=false)}
 }
-async function fetchData(url,options){
- const response=await fetch(url,options);
- if(!response.ok)throw Error('HTTP '+response.status);
- const json=await response.json();
- if(json.busy)throw Error('采样正在进行，稍后自动刷新');
- return json;
+$('collect').addEventListener('click',()=>collect(false));
+$('apify').addEventListener('click',()=>collect(true));
+$('refresh').addEventListener('click',refresh);
+let timer=null;
+async function boot(){
+ mode=await detectMode();
+ if(mode==='none'){$('sources').textContent='请通过已部署站点或本地服务（Start.cmd）打开。';$('mode').textContent='未连接';return}
+ if(mode==='locked'){$('mode').textContent='需要口令';note('请在右上角填写团队口令');return}
+ $('token').hidden=!lsGet('hok-team-token','');
+ if(mode==='static')loadLocal();
+ $('mode').textContent=mode==='server'?'团队服务 · 共享审核':'静态演示 · 仅本浏览器';
+ $('mode').className='pill'+(mode==='server'?'':' warn');
+ $('collect').hidden=$('apify').hidden=mode!=='server';$('refresh').hidden=mode!=='static';
+ await refresh();
+ clearInterval(timer);timer=setInterval(refresh,20000);
 }
-if(location.protocol!=='file:'){
- $('live').hidden=false;
- if(!localService)$('live').textContent='刷新采样快照';
- $('live').addEventListener('click',()=>syncLive(true));
- syncLive();setInterval(syncLive,20000);
-}else{
- $('sources').textContent='请通过已部署站点或本地采样服务打开。';
-}
-render();
+boot();
 </script></body></html>

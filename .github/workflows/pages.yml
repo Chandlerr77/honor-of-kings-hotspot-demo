@@ -3,11 +3,12 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 2 * * *' # 10:17 Asia/Shanghai
+    - cron: '17 2 * * *'  # 10:17 Asia/Shanghai: game sources + Apify search (billed)
+    - cron: '47 * * * *'  # hourly: free game sources only
   workflow_dispatch:
     inputs:
       apify_trends:
-        description: Run one capped Apify trend sample
+        description: Also run one capped Apify search (billed)
         type: boolean
         default: false
 
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   sample:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -32,10 +33,23 @@ jobs:
           path: .data/apify-hotspots.sqlite3
           key: apify-hotspots-v2-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: apify-hotspots-v2-
+      - name: Install model SDK
+        run: pip install -r requirements.txt
       - name: Build Pages files
         env:
-          HOTSPOT_APIFY_PILOT: ${{ github.event_name == 'schedule' || inputs.apify_trends }}
-          APIFY_TOKEN: ${{ (github.event_name == 'schedule' || inputs.apify_trends) && secrets.APIFY_TOKEN || '' }}
+          HOTSPOT_SOURCES: ${{ (github.event.schedule == '17 2 * * *' || inputs.apify_trends) && 'game,apify' || ((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'game' || '') }}
+          APIFY_TOKEN: ${{ (github.event.schedule == '17 2 * * *' || inputs.apify_trends) && secrets.APIFY_TOKEN || '' }}
+          # AI 核验/匹配/生成：配置下面任意一个 Secret 即可，未配置的为空，不影响运行
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DASHSCOPE_API_KEY: ${{ secrets.DASHSCOPE_API_KEY }}
+          MOONSHOT_API_KEY: ${{ secrets.MOONSHOT_API_KEY }}
+          ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python build_pages.py
       - uses: actions/cache/save@v4
         with:
