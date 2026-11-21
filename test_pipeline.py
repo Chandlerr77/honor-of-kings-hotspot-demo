@@ -416,6 +416,24 @@ class MultiGameTests(unittest.TestCase):
             trends.request_rows = original
         self.assertEqual(found, {"xhs-" + "a" * 24: "ys"})                # second row names no 金铲铲 keyword
 
+    def test_apify_runs_once_per_game_and_survives_one_failure(self):
+        calls = []
+
+        def fake(platform, payload):
+            calls.append(payload["searchQueries"])
+            if payload["searchQueries"] == ["原神"]:
+                raise ValueError("HTTP 500")
+            return [{"id": payload["searchQueries"][0]}]          # the free plan omits nothing else we need
+
+        original = trends.request_rows
+        trends.request_rows = fake
+        try:
+            rows = trends.rows("douyin")
+        finally:
+            trends.request_rows = original
+        self.assertEqual(calls, [["王者荣耀"], ["和平精英"], ["原神"], ["金铲铲之战"]])
+        self.assertEqual([r["input"] for r in rows], ["王者荣耀", "和平精英", "金铲铲之战"])
+
     def test_boards_tag_each_entry_with_its_game(self):
         weibo = {"ok": 1, "data": {"band_list": [{"word": "和平精英新地图", "num": 9}, {"word": "原神音乐会", "num": 8}]}}
         self.assertEqual([i["game"] for i in game_sources.weibo(weibo)], ["hpjy", "ys"])

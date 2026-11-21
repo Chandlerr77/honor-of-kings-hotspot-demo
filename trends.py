@@ -31,7 +31,7 @@ def request_rows(platform, payload):
     actor, _ = ACTORS[platform]
     req = Request(
         f"https://api.apify.com/v2/actors/dataxapi~{actor}/run-sync-get-dataset-items"
-        f"?maxTotalChargeUsd={0.05 * len(games.GAMES):.2f}&timeout=120",   # about $0.05 per game
+        "?maxTotalChargeUsd=0.05&timeout=120",   # one game per run, about $0.05 at most
         data=json.dumps(payload).encode(),
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
     )
@@ -42,9 +42,20 @@ def request_rows(platform, payload):
     return data
 
 def rows(platform):
+    """One Apify run per game: the free plan only processes the first input of a run."""
     _, options = ACTORS[platform]
-    return request_rows(platform, {"searchQueries": list(games.by_query()), "publishedWithin": "week",
-                                   "sort": "popular", **options})
+    found, failures = [], []
+    for query in games.by_query():
+        try:
+            batch = request_rows(platform, {"searchQueries": [query], "publishedWithin": "week",
+                                            "sort": "popular", **options})
+        except (OSError, ValueError) as error:
+            failures.append(f"{query}：{error}")
+            continue
+        found.extend({**row, "input": row.get("input") or query} for row in batch if isinstance(row, dict))
+    if failures and not found:
+        raise ValueError("；".join(failures))
+    return found
 
 def post_date(value):
     try:
