@@ -90,7 +90,7 @@ function view(item){
 // ---------- rendering ----------
 function renderStatus(){
  const parts=[];
- if(mode==='static')parts.push('每小时更新游戏圈热点，每天 10:17 加跑 Apify（北京时间）');
+ if(mode==='static')parts.push('每小时更新游戏圈热点，每 2 天 10:17 加跑 Apify（北京时间）');
  if(run?.sampled)parts.push('最近采样 '+stamp(run.sampled));
  if(run?.counts)parts.push(Object.entries(run.counts).map(([name,n])=>name+' '+n+' 条').join(' · '));
  if(run?.ai)parts.push(run.ai.model?'AI '+run.ai.model+' 本轮分析 '+run.ai.analyzed+' 条'+(run.ai.pending?'，排队 '+run.ai.pending+' 条':'')+(run.ai.skipped?'，积压未分析 '+run.ai.skipped+' 条':'')+(Object.keys(run.ai.errors||{}).length?'，失败 '+Object.keys(run.ai.errors).length+' 条':''):'AI：'+run.ai.error);
